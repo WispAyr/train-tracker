@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ayr — Glasgow Central | Departure Board</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --board-bg: #111111;
+    --board-border: #1a1a1a;
+    --amber: #ffb300;
+    --amber-dim: #8a6200;
+    --amber-glow: rgba(255, 179, 0, 0.08);
+    --green: #00e676;
+    --red: #ff1744;
+    --white: #fafafa;
+    --text-dim: #555;
+    --header-blue: #003580;
+    --header-blue-light: #0054a6;
+    --scotrail-blue: #1a237e;
+    --nav-text: #ffb300;
+    --btn-border: #333;
+    --select-bg: #1a1a1a;
+    --select-text: #ffb300;
+    --dot-opacity: 0.12;
+  }
+
+  :root.light {
+    --bg: #f5f5f5;
+    --board-bg: #ffffff;
+    --board-border: #e0e0e0;
+    --amber: #e65100;
+    --amber-dim: #bf360c;
+    --amber-glow: rgba(230, 81, 0, 0.05);
+    --green: #2e7d32;
+    --red: #c62828;
+    --white: #212121;
+    --text-dim: #9e9e9e;
+    --header-blue: #1565c0;
+    --header-blue-light: #1976d2;
+    --scotrail-blue: #283593;
+    --nav-text: #1565c0;
+    --btn-border: #bdbdbd;
+    --select-bg: #ffffff;
+    --select-text: #212121;
+    --dot-opacity: 0;
+  }
+
+  body {
+    font-family: 'Share Tech Mono', monospace;
+    background: var(--bg);
+    color: var(--amber);
+    min-height: 100vh;
+  }
+
+  /* Header bar */
+  #header {
+    background: var(--header-blue);
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--header-blue-light);
+  }
+
+  #header h1 {
+    font-size: 14px;
+    color: #fff;
+    letter-spacing: 2px;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 4px;
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .nav-links a {
+    color: rgba(255,255,255,0.8);
+    text-decoration: none;
+    padding: 4px 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+
+  .nav-links a:hover, .nav-links a.active {
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+
+  .theme-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    color: #fff;
+  }
+
+  /* Station banner */
+  #station-banner {
+    background: var(--scotrail-blue);
+    padding: 20px 24px;
+    text-align: center;
+    border-bottom: 2px solid var(--header-blue-light);
+  }
+
+  #station-name {
+    font-size: 32px;
+    color: #fff;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    font-weight: 400;
+  }
+
+  #station-selector {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #station-select {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    padding: 6px 16px;
+    background: var(--select-bg);
+    color: var(--select-text);
+    border: 1px solid var(--btn-border);
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+
+  /* Live indicator */
+  .live-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 24px;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--red);
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  #clock {
+    font-size: 18px;
+    color: var(--amber);
+    letter-spacing: 3px;
+  }
+
+  /* Board section */
+  .board-section {
+    margin: 8px 16px;
+    border: 1px solid var(--board-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .board-title {
+    background: var(--header-blue);
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Board table */
+  .board-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--board-bg);
+  }
+
+  .board-table thead th {
+    background: var(--board-bg);
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--board-border);
+    font-weight: 400;
+  }
+
+  .board-table tbody tr {
+    border-bottom: 1px solid var(--board-border);
+    transition: background 0.3s;
+  }
+
+  .board-table tbody tr:hover {
+    background: var(--amber-glow);
+  }
+
+  .board-table td {
+    padding: 10px 12px;
+    font-size: 16px;
+    letter-spacing: 1px;
+    vertical-align: middle;
+    position: relative;
+  }
+
+  /* Dot matrix effect */
+  .board-table td::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      transparent,
+      transparent 1px,
+      rgba(0,0,0,var(--dot-opacity)) 1px,
+      rgba(0,0,0,var(--dot-opacity)) 2px
+    );
+    pointer-events: none;
+  }
+
+  .td-time { width: 70px; color: var(--amber); font-size: 18px; }
+  .td-dest { color: var(--amber); min-width: 180px; }
+  .td-plat { width: 60px; text-align: center; color: var(--amber); }
+  .td-expected { width: 100px; }
+  .td-calling { font-size: 12px; color: var(--amber-dim); max-width: 350px; overflow: hidden; }
+
+  .calling-scroll {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+
+  /* Status colors */
+  .status-ontime { color: var(--green); }
+  .status-delayed { color: var(--amber); }
+  .status-cancelled {
+    color: var(--red);
+    animation: flash 1s infinite;
+  }
+
+  @keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Flip animation */
+  @keyframes flipIn {
+    0% {
+      transform: rotateX(-90deg);
+      opacity: 0;
+    }
+    100% {
+      transform: rotateX(0deg);
+      opacity: 1;
+    }
+  }
+
+  .flip-row {
+    animation: flipIn 0.4s ease-out;
+    transform-origin: top center;
+  }
+
+  .flip-row:nth-child(2) { animation-delay: 0.05s; }
+  .flip-row:nth-child(3) { animation-delay: 0.1s; }
+  .flip-row:nth-child(4) { animation-delay: 0.15s; }
+  .flip-row:nth-child(5) { animation-delay: 0.2s; }
+  .flip-row:nth-child(6) { animation-delay: 0.25s; }
+  .flip-row:nth-child(7) { animation-delay: 0.3s; }
+  .flip-row:nth-child(8) { animation-delay: 0.35s; }
+  .flip-row:nth-child(9) { animation-delay: 0.4s; }
+  .flip-row:nth-child(10) { animation-delay: 0.45s; }
+
+  /* No services */
+  .no-services {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  /* Platform badge */
+  .plat-badge {
+    display: inline-block;
+    background: var(--amber);
+    color: var(--board-bg);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: bold;
+    font-size: 14px;
+    min-width: 28px;
+    text-align: center;
+  }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    margin: 8px 16px 0;
+  }
+
+  .tab-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 10px 24px;
+    background: var(--board-bg);
+    color: var(--text-dim);
+    border: 1px solid var(--board-border);
+    border-bottom: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .tab-btn.active {
+    color: var(--amber);
+    background: var(--board-bg);
+    border-bottom: 2px solid var(--amber);
+  }
+
+  .tab-btn:hover {
+    color: var(--amber);
+  }
+
+  /* Footer */
+  #footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  @media (max-width: 768px) {
+    #station-name { font-size: 22px; letter-spacing: 3px; }
+    .board-table td { font-size: 13px; padding: 8px; }
+    .td-calling { display: none; }
+    #header { flex-direction: column; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>ScotRail Live Departures</h1>
+  <div class="header-right">
+    <nav class="nav-links">
+      <a href="/">Diagram</a>
+      <a href="/signalman">Signal Panel</a>
+      <a href="/board" class="active">Board</a>
+    </nav>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
+  </div>
+</div>
+
+<div id="station-banner">
+  <div id="station-name">TROON</div>
+  <div id="station-selector">
+    <label style="color:rgba(255,255,255,0.6); font-size:11px; letter-spacing:2px;">STATION:</label>
+    <select id="station-select" onchange="changeStation()"></select>
+  </div>
+</div>
+
+<div class="live-row">
+  <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+  <div id="clock">--:--:--</div>
+  <div id="last-update" style="font-size:10px;">Updated: --</div>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="departures" onclick="switchTab('departures')">▶ Departures</button>
+  <button class="tab-btn" data-tab="arrivals" onclick="switchTab('arrivals')">◀ Arrivals</button>
+</div>
+
+<div id="departures-board" class="board-section">
+  <div class="board-title">
+    <span>Departures</span>
+    <span id="dep-direction"></span>
+  </div>
+  <table class="board-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Destination</th>
+        <th>Plat</th>
+        <th>Expected</th>
+        <th>Calling At</th>
+      </tr>
+    </thead>
+    <tbody id="dep-body"></tbody>
+  </table>
+</div>
+
+<div id="arrivals-board" class="board-section" style="display:none;">
+  <div class="board-title">
+    <span>Arrivals</span>
+    <span id="arr-direction"></span>
+  </div>
+  <table class="board-table">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Origin</th>
+        <th>Plat</th>
+        <th>Expected</th>
+        <th>Calling At</th>
+      </tr>
+    </thead>
+    <tbody id="arr-body"></tbody>
+  </table>
+</div>
+
+<div id="footer">Auto-refresh every 30 seconds · Data from ScotRail via JourneyCheck</div>
+
+<script>
+const STATIONS = [
+  { crs: 'AYR', name: 'Ayr' },
+  { crs: 'NOA', name: 'Newton-on-Ayr' },
+  { crs: 'PTW', name: 'Prestwick Town' },
+  { crs: 'PRA', name: 'Prestwick Airport' },
+  { crs: 'TRN', name: 'Troon' },
+  { crs: 'BSS', name: 'Barassie' },
+  { crs: 'IRV', name: 'Irvine' },
+  { crs: 'KWN', name: 'Kilwinning' },
+  { crs: 'DLY', name: 'Dalry' },
+  { crs: 'LHW', name: 'Lochwinnoch' },
+  { crs: 'MIK', name: 'Milliken Park' },
+  { crs: 'JHN', name: 'Johnstone' },
+  { crs: 'PYG', name: 'Paisley Gilmour St' },
+  { crs: 'GLC', name: 'Glasgow Central' },
+];
+
+let currentStation = 'TRN';
+let currentTab = 'departures';
+let allData = null;
+
+// Init station selector
+function initSelector() {
+  const select = document.getElementById('station-select');
+  STATIONS.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.crs;
+    opt.textContent = `${s.name} (${s.crs})`;
+    select.appendChild(opt);
+  });
+
+  // Check URL params
+  const params = new URLSearchParams(window.location.search);
+  const urlStation = params.get('station');
+  if (urlStation && STATIONS.find(s => s.crs === urlStation.toUpperCase())) {
+    currentStation = urlStation.toUpperCase();
+  }
+
+  select.value = currentStation;
+  updateStationDisplay();
+}
+
+function changeStation() {
+  currentStation = document.getElementById('station-select').value;
+  updateStationDisplay();
+  // Update URL
+  const url = new URL(window.location);
+  url.searchParams.set('station', currentStation);
+  window.history.replaceState({}, '', url);
+  if (allData) renderBoard(allData);
+}
+
+function updateStationDisplay() {
+  const stn = STATIONS.find(s => s.crs === currentStation);
+  document.getElementById('station-name').textContent = stn ? stn.name.toUpperCase() : currentStation;
+}
+
+// Theme
+function toggleTheme() {
+  const root = document.documentElement;
+  if (root.classList.contains('light')) {
+    root.classList.remove('light');
+    localStorage.setItem('board-theme', 'dark');
+    document.querySelector('.theme-btn').textContent = '☀️';
+  } else {
+    root.classList.add('light');
+    localStorage.setItem('board-theme', 'light');
+    document.querySelector('.theme-btn').textContent = '🌙';
+  }
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem('board-theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    document.querySelector('.theme-btn').textContent = '🌙';
+  }
+})();
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Tabs
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('departures-board').style.display = tab === 'departures' ? 'block' : 'none';
+  document.getElementById('arrivals-board').style.display = tab === 'arrivals' ? 'block' : 'none';
+}
+
+// Parse time
+function timeToMins(t) {
+  if (!t) return null;
+  const m = t.match(/(\d{2}):(\d{2})/);
+  return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : null;
+}
+
+// Get calling points after/before a station
+function getCallingAfter(callingPoints, stationCrs) {
+  const idx = callingPoints.findIndex(cp => cp.crs === stationCrs);
+  if (idx < 0) return [];
+  return callingPoints.slice(idx + 1).map(cp => cp.station);
+}
+
+function getCallingBefore(callingPoints, stationCrs) {
+  const idx = callingPoints.findIndex(cp => cp.crs === stationCrs);
+  if (idx < 0) return [];
+  return callingPoints.slice(0, idx).map(cp => cp.station);
+}
+
+// Build expected status HTML
+function expectedHtml(expected, cancelled) {
+  if (cancelled) return '<span class="status-cancelled">CANCELLED</span>';
+  if (expected === 'On Time') return '<span class="status-ontime">On Time</span>';
+  const m = expected.match(/(\d{2}:\d{2})/);
+  if (m) return `<span class="status-delayed">${m[1]}</span>`;
+  return `<span class="status-delayed">${expected}</span>`;
+}
+
+// Render the board
+function renderBoard(data) {
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const stnIdx = STATIONS.findIndex(s => s.crs === currentStation);
+
+  // Departures: trains calling at this station, showing time at this station
+  const departures = [];
+  const arrivals = [];
+
+  function processDirection(services, direction, label) {
+    if (!services || !services.departures) return;
+
+    services.departures.forEach(svc => {
+      const cp = svc.calling_points.find(c => c.crs === currentStation);
+      if (!cp) return;
+
+      const schedMins = timeToMins(cp.scheduled);
+      if (schedMins === null) return;
+
+      // Get effective expected
+      let expected = cp.expected || svc.expected || 'On Time';
+      const cancelled = svc.cancelled || expected.toLowerCase().includes('cancelled');
+
+      // Platform: use calling point platform first, then service platform
+      let platform = cp.platform || svc.platform || '';
+
+      // For departures: is this station before the terminus?
+      const cpIdx = svc.calling_points.findIndex(c => c.crs === currentStation);
+      const lastCp = svc.calling_points[svc.calling_points.length - 1];
+      const firstCp = svc.calling_points[0];
+
+      // This is a departure if the train hasn't terminated here
+      if (lastCp && lastCp.crs !== currentStation) {
+        // Only show if the train hasn't passed yet (within a window)
+        if (schedMins >= nowMins - 5) {
+          const callingAt = getCallingAfter(svc.calling_points, currentStation);
+          departures.push({
+            time: cp.scheduled,
+            sortMins: schedMins,
+            destination: lastCp.station,
+            platform,
+            expected,
+            cancelled,
+            callingAt,
+            direction: label,
+          });
+        }
+      }
+
+      // This is an arrival if the train didn't originate here
+      if (firstCp && firstCp.crs !== currentStation) {
+        if (schedMins >= nowMins - 5) {
+          const callingBefore = getCallingBefore(svc.calling_points, currentStation);
+          arrivals.push({
+            time: cp.scheduled,
+            sortMins: schedMins,
+            origin: firstCp.station,
+            platform,
+            expected,
+            cancelled,
+            callingAt: callingBefore.reverse(),
+            direction: label,
+          });
+        }
+      }
+    });
+  }
+
+  processDirection(data.northbound, 'northbound', '→ Glasgow');
+  processDirection(data.southbound, 'southbound', '→ Ayr');
+
+  // Sort by time
+  departures.sort((a, b) => a.sortMins - b.sortMins);
+  arrivals.sort((a, b) => a.sortMins - b.sortMins);
+
+  // Render departures
+  const depBody = document.getElementById('dep-body');
+  depBody.innerHTML = '';
+  const depSlice = departures.slice(0, 10);
+
+  if (depSlice.length === 0) {
+    depBody.innerHTML = '<tr><td colspan="5" class="no-services">No departures to display</td></tr>';
+  } else {
+    depSlice.forEach((d, i) => {
+      const tr = document.createElement('tr');
+      tr.className = 'flip-row';
+      tr.innerHTML = `
+        <td class="td-time">${d.time}</td>
+        <td class="td-dest">${d.destination}</td>
+        <td class="td-plat">${d.platform ? `<span class="plat-badge">${d.platform}</span>` : '-'}</td>
+        <td class="td-expected">${expectedHtml(d.expected, d.cancelled)}</td>
+        <td class="td-calling"><span class="calling-scroll">${d.callingAt.length ? d.callingAt.join(', ') : '-'}</span></td>
+      `;
+      depBody.appendChild(tr);
+    });
+  }
+
+  // Render arrivals
+  const arrBody = document.getElementById('arr-body');
+  arrBody.innerHTML = '';
+  const arrSlice = arrivals.slice(0, 10);
+
+  if (arrSlice.length === 0) {
+    arrBody.innerHTML = '<tr><td colspan="5" class="no-services">No arrivals to display</td></tr>';
+  } else {
+    arrSlice.forEach((a, i) => {
+      const tr = document.createElement('tr');
+      tr.className = 'flip-row';
+      tr.innerHTML = `
+        <td class="td-time">${a.time}</td>
+        <td class="td-dest">${a.origin}</td>
+        <td class="td-plat">${a.platform ? `<span class="plat-badge">${a.platform}</span>` : '-'}</td>
+        <td class="td-expected">${expectedHtml(a.expected, a.cancelled)}</td>
+        <td class="td-calling"><span class="calling-scroll">${a.callingAt.length ? 'from ' + a.callingAt.join(', ') : '-'}</span></td>
+      `;
+      arrBody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('last-update').textContent = `Updated: ${now.toLocaleTimeString('en-GB')}`;
+}
+
+// Fetch
+async function fetchData() {
+  try {
+    const resp = await fetch('/api/all');
+    const data = await resp.json();
+    allData = data;
+    renderBoard(data);
+  } catch (err) {
+    console.error('Fetch error:', err);
+  }
+}
+
+// Init
+initSelector();
+fetchData();
+setInterval(fetchData, 30000);
+</script>
+</body>
+</html>

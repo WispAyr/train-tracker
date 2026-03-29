@@ -245,5 +245,19 @@ async def index():
     return HTMLResponse(html_path.read_text())
 
 
+@app.get("/signalman")
+async def signalman():
+    """Serve the signalman panel page."""
+    html_path = Path(__file__).parent / "signalman.html"
+    return HTMLResponse(html_path.read_text())
+
+
+@app.get("/board")
+async def board():
+    """Serve the departure board page."""
+    html_path = Path(__file__).parent / "board.html"
+    return HTMLResponse(html_path.read_text())
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3970)
