@@ -284,5 +284,55 @@ async def buses():
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+@app.get("/api/nuro")
+async def nuro_feed():
+    """Nuro integration — live transport summary for coherence layer."""
+    try:
+        bus_data = []
+        train_data = {"trains": []}
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                r = await client.get(
+                    "https://bustimes.org/vehicles.json"
+                    "?ymax=55.9&xmax=-4.1&ymin=55.3&xmin=-4.9",
+                    headers={"User-Agent": USER_AGENT},
+                )
+                if r.status_code == 200:
+                    bus_data = r.json()
+        except Exception:
+            pass
+
+        # Derive operator counts from vehicle URL prefixes
+        op_map = {"stws": "Stagecoach West", "scnh": "Stagecoach", "mega": "Megabus",
+                  "embr": "Ember", "scfi": "First Scotland", "mcgl": "McGills"}
+        operators = {}
+        for b in bus_data:
+            vurl = (b.get("vehicle") or {}).get("url", "")
+            prefix = vurl.split("/vehicles/")[-1].split("-")[0] if "/vehicles/" in vurl else "unknown"
+            op = op_map.get(prefix, "Other")
+            operators[op] = operators.get(op, 0) + 1
+
+        routes = set()
+        for b in bus_data:
+            svc = b.get("service") or {}
+            ln = svc.get("line_name")
+            if ln:
+                routes.add(ln)
+
+        return {
+            "service": "train-tracker",
+            "version": "1.0",
+            "bus_count": len(bus_data),
+            "train_count": 0,  # TODO: add when ScotRail scrape is reliable
+            "operators": operators,
+            "active_routes": sorted(routes),
+            "route_count": len(routes),
+            "coverage": "Ayrshire (55.3-55.9N, 4.1-4.9W)",
+            "data_sources": ["bustimes.org", "scotrail (scrape)"],
+        }
+    except Exception as e:
+        return {"service": "train-tracker", "error": str(e)}
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3970)
