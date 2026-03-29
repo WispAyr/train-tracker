@@ -486,14 +486,14 @@
     const rot = heading || 0;
     return L.divIcon({
       className: 'bus-marker-icon',
-      html: `<div style="position:relative;width:22px;height:22px;pointer-events:auto;">
-        <svg width="22" height="22" viewBox="0 0 22 22" style="transform:rotate(${rot}deg);display:block;">
-          <circle cx="11" cy="11" r="9" fill="${color}" opacity="0.9" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
-          <polygon points="11,3 14,10 11,8 8,10" fill="rgba(255,255,255,0.85)"/>
+      html: `<div style="position:relative;width:24px;height:24px;pointer-events:auto;">
+        <svg width="24" height="24" viewBox="0 0 24 24" style="transform:rotate(${rot}deg);display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));">
+          <circle cx="12" cy="12" r="10" fill="${color}" stroke="#333" stroke-width="1.5"/>
+          <polygon points="12,4 15,11 12,9 9,11" fill="white"/>
         </svg>
       </div>`,
-      iconSize: [22, 22],
-      iconAnchor: [11, 11],
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
       popupAnchor: [0, -14],
     });
   }
@@ -650,7 +650,7 @@
     filtered.forEach((bus, idx) => {
       const lat = bus.coordinates[1];
       const lon = bus.coordinates[0];
-      const id = bus.id || bus.vehicle?.url || `bus-${idx}`;
+      const id = String(bus.id || bus.vehicle?.url || `bus-${idx}`);
       activeIds.add(id);
 
       const color = getOperatorColor(bus.operator);
@@ -664,6 +664,7 @@
       if (busMarkers[id]) {
         // Update existing marker position with animation
         animateMarker(busMarkers[id].marker, [lat, lon], 2000);
+        busMarkers[id].marker.setIcon(busIcon(color, bus.heading, bus.line_name));
         busMarkers[id].marker.setPopupContent(popupContent);
         if (busMarkers[id].labelMarker) {
           animateMarker(busMarkers[id].labelMarker, [lat, lon], 2000);
@@ -671,20 +672,14 @@
       } else {
         // Create new marker
         const marker = L.marker([lat, lon], {
-          icon: L.divIcon({
-            className: 'bus-dot',
-            html: `<div style="width:14px;height:14px;background:${color};border-radius:50%;border:2px solid rgba(255,255,255,0.6);box-shadow:0 0 6px ${color};"></div>`,
-            iconSize: [14, 14],
-            iconAnchor: [7, 7],
-            popupAnchor: [0, -10],
-          }),
+          icon: busIcon(color, bus.heading, bus.line_name),
           zIndexOffset: 100,
         }).addTo(map).bindPopup(popupContent);
 
         const labelMarker = L.marker([lat, lon], {
           icon: L.divIcon({
             className: 'bus-label',
-            html: `<span style="color:${color}">${bus.line_name || ''}</span>`,
+            html: `<span style="color:${color};font-weight:700;text-shadow:0 0 3px rgba(255,255,255,0.9),-1px 0 0 #fff,1px 0 0 #fff,0 -1px 0 #fff,0 1px 0 #fff;">${bus.line_name || ''}</span>`,
             iconSize: [40, 16],
             iconAnchor: [-8, 8],
           }),
