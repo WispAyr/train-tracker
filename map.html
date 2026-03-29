@@ -471,13 +471,28 @@
   updateClock();
 
   // ── Operator Colors ──
+  function getOperatorFromBus(bus) {
+    // bustimes.org doesn't include operator name — derive from vehicle URL prefix
+    const vurl = bus.vehicle?.url || '';
+    const prefix = vurl.split('/vehicles/')[1]?.split('-')[0] || '';
+    const map = {
+      stws: 'Stagecoach West', scnh: 'Stagecoach', scso: 'Stagecoach',
+      mega: 'Megabus', embr: 'Ember',
+      scfi: 'First Scotland', fgla: 'First Glasgow',
+      mcgl: 'McGills', wcsm: 'West Coast Motors',
+    };
+    return map[prefix] || bus.operator || null;
+  }
+
   function getOperatorColor(operator) {
-    if (!operator) return '#9ca3af';
+    if (!operator) return '#f97316';
     const op = operator.toLowerCase();
     if (op.includes('stagecoach')) return '#00aeef';
     if (op.includes('mcgill')) return '#e11d48';
     if (op.includes('first')) return '#7c3aed';
     if (op.includes('west coast')) return '#059669';
+    if (op.includes('megabus')) return '#002E6D';
+    if (op.includes('ember')) return '#ff6b00';
     return '#f97316';
   }
 
@@ -610,7 +625,7 @@
 
     const filtered = allBusData.filter(b => {
       if (routeFilter !== 'all' && b.line_name !== routeFilter) return false;
-      if (operatorFilter !== 'all' && b.operator !== operatorFilter) return false;
+      if (operatorFilter !== 'all' && getOperatorFromBus(b) !== operatorFilter) return false;
       return true;
     });
 
@@ -619,7 +634,7 @@
     const newOperators = new Set();
     allBusData.forEach(b => {
       if (b.line_name) newRoutes.add(b.line_name);
-      if (b.operator) newOperators.add(b.operator);
+      const op = getOperatorFromBus(b); if (op) newOperators.add(op);
     });
 
     // Update dropdowns if changed
@@ -653,11 +668,12 @@
       const id = String(bus.id || bus.vehicle?.url || `bus-${idx}`);
       activeIds.add(id);
 
-      const color = getOperatorColor(bus.operator);
+      const opName = getOperatorFromBus(bus);
+      const color = getOperatorColor(opName);
       const popupContent = `
         <div class="popup-route" style="color:${color}">${bus.line_name || '?'}</div>
         <div class="popup-dest">${bus.destination || 'Unknown destination'}</div>
-        <div class="popup-operator">${bus.operator || 'Unknown operator'}</div>
+        <div class="popup-operator">${opName || 'Unknown operator'}</div>
         <div class="popup-time">Heading: ${bus.heading != null ? Math.round(bus.heading) + '°' : 'N/A'}</div>
       `;
 
