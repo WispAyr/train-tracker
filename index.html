@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ayr — Glasgow Central | Time-Distance Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --bg: #f8fafc;
+    --bg-header: rgba(255, 255, 255, 0.85);
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-dim: #64748b;
+    --text-label: #94a3b8;
+    --grid-strong: rgba(0,0,0,0.1);
+    --grid-light: rgba(0,0,0,0.04);
+    --grid-border: rgba(0,0,0,0.08);
+    --cyan: #0891b2;
+    --cyan-glow: rgba(8, 145, 178, 0.2);
+    --orange: #ea580c;
+    --orange-glow: rgba(234, 88, 12, 0.2);
+    --amber: #d97706;
+    --red: #dc2626;
+    --grey: #9ca3af;
+    --green: #16a34a;
+    --now-line: #dc2626;
+    --tooltip-bg: rgba(255, 255, 255, 0.95);
+    --tooltip-border: rgba(0,0,0,0.1);
+    --tooltip-shadow: rgba(0,0,0,0.1);
+  }
+
+  :root.dark {
+    --bg: #0a0e17;
+    --bg-header: rgba(15, 23, 42, 0.75);
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-label: #475569;
+    --grid-strong: rgba(255,255,255,0.08);
+    --grid-light: rgba(255,255,255,0.03);
+    --grid-border: rgba(255,255,255,0.06);
+    --cyan: #22d3ee;
+    --cyan-glow: rgba(34, 211, 238, 0.35);
+    --orange: #fb923c;
+    --orange-glow: rgba(251, 146, 60, 0.35);
+    --amber: #fbbf24;
+    --red: #ef4444;
+    --grey: #6b7280;
+    --green: #22c55e;
+    --now-line: #ef4444;
+    --tooltip-bg: rgba(15, 23, 42, 0.92);
+    --tooltip-border: rgba(255,255,255,0.1);
+    --tooltip-shadow: rgba(0,0,0,0.5);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-header);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  #header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+  #header h1 span { color: var(--text-dim); font-weight: 400; }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: var(--green);
+  }
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--green);
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  #clock {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  #legend {
+    display: flex;
+    gap: 14px;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend-swatch {
+    width: 18px; height: 3px;
+    border-radius: 2px;
+  }
+  .legend-swatch.dashed {
+    background: repeating-linear-gradient(90deg, var(--grey) 0 4px, transparent 4px 8px);
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0; left: 0;
+  }
+
+  #tooltip {
+    position: fixed;
+    display: none;
+    pointer-events: none;
+    z-index: 200;
+    background: var(--tooltip-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--tooltip-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    max-width: 280px;
+    box-shadow: 0 8px 32px var(--tooltip-shadow);
+  }
+  #tooltip .tt-header {
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  #tooltip .tt-row {
+    color: var(--text-dim);
+  }
+  #tooltip .tt-row span {
+    color: var(--text);
+  }
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>AYR <span>—</span> GLASGOW CENTRAL <span style="margin-left:8px; font-size:11px; color:var(--text-dim)">Time-Distance Diagram</span></h1>
+  <div class="header-right">
+    <div id="legend">
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--cyan)"></div>Northbound</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--orange)"></div>Southbound</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--amber)"></div>Delayed</div>
+      <div class="legend-item"><div class="legend-swatch" style="background:var(--red)"></div>Late &gt;5m</div>
+      <div class="legend-item"><div class="legend-swatch dashed"></div>Cancelled</div>
+    </div>
+    <div id="clock"></div>
+    <button id="themeToggle" onclick="toggleTheme()" title="Toggle dark/light mode" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:16px;line-height:1;color:var(--text);">☀️</button>
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+// ── Theme Toggle ──
+function toggleTheme() {
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (root.classList.contains('dark')) {
+    root.classList.remove('dark');
+    btn.textContent = '🌙';
+    localStorage.setItem('train-theme', 'light');
+  } else {
+    root.classList.add('dark');
+    btn.textContent = '☀️';
+    localStorage.setItem('train-theme', 'dark');
+  }
+}
+
+// Apply saved theme (default: light)
+(function() {
+  const saved = localStorage.getItem('train-theme');
+  const btn = document.getElementById('themeToggle');
+  if (saved === 'dark') {
+    document.documentElement.classList.add('dark');
+    if (btn) btn.textContent = '☀️';
+  } else {
+    document.documentElement.classList.remove('dark');
+    if (btn) btn.textContent = '🌙';
+  }
+})();
+
+// ── Station Data ──
+const STATIONS = [
+  { name: 'Glasgow Central', crs: 'GLC', miles: 31 },
+  { name: 'Paisley Gilmour St', crs: 'PYG', miles: 26 },
+  { name: 'Johnstone', crs: 'JHN', miles: 22 },
+  { name: 'Milliken Park', crs: 'MIK', miles: 21 },
+  { name: 'Lochwinnoch', crs: 'LHW', miles: 18 },
+  { name: 'Dalry', crs: 'DLY', miles: 14 },
+  { name: 'Kilwinning', crs: 'KWN', miles: 9.5 },
+  { name: 'Irvine', crs: 'IRV', miles: 7.5 },
+  { name: 'Barassie', crs: 'BSS', miles: 5.5 },
+  { name: 'Troon', crs: 'TRN', miles: 4.5 },
+  { name: 'Prestwick Airport', crs: 'PRA', miles: 2.5 },
+  { name: 'Prestwick Town', crs: 'PTW', miles: 1.8 },
+  { name: 'Newton-on-Ayr', crs: 'NOA', miles: 0.7 },
+  { name: 'Ayr', crs: 'AYR', miles: 0 },
+];
+
+const MAX_MILES = 31;
+const CRS_TO_MILES = {};
+STATIONS.forEach(s => CRS_TO_MILES[s.crs] = s.miles);
+
+// ── Layout Constants ──
+const HEADER_H = 48;
+const MARGIN_LEFT = 140;
+const MARGIN_RIGHT = 40;
+const MARGIN_TOP = HEADER_H + 30;
+const MARGIN_BOTTOM = 40;
+const PIXELS_PER_MINUTE = 4;
+const WINDOW_MINUTES = 180; // 3 hours
+const NOW_PERCENT = 0.7; // now line at 70% from left
+
+// ── State ──
+let canvas, ctx;
+let trainData = null;
+let hoveredTrain = null;
+let mouseX = 0, mouseY = 0;
+let dpr = 1;
+
+// ── Helpers ──
+function parseTime(str) {
+  if (!str || typeof str !== 'string') return null;
+  const m = str.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  return parseInt(m[1]) * 60 + parseInt(m[2]);
+}
+
+function formatTime(mins) {
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function getNowMinutes() {
+  const d = new Date();
+  return d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+}
+
+function getChartArea() {
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+  return {
+    x: MARGIN_LEFT,
+    y: MARGIN_TOP,
+    w: w - MARGIN_LEFT - MARGIN_RIGHT,
+    h: h - MARGIN_TOP - MARGIN_BOTTOM
+  };
+}
+
+function timeToX(minuteOfDay) {
+  const now = getNowMinutes();
+  const chart = getChartArea();
+  const nowX = chart.x + chart.w * NOW_PERCENT;
+  return nowX + (minuteOfDay - now) * PIXELS_PER_MINUTE;
+}
+
+function milesToY(miles) {
+  const chart = getChartArea();
+  // Glasgow (31 miles) at top, Ayr (0) at bottom
+  const fraction = miles / MAX_MILES;
+  return chart.y + chart.h * (1 - fraction);
+}
+
+// ── Data Processing ──
+function processTrains(data) {
+  const trains = [];
+  if (!data) return trains;
+  
+  ['northbound', 'southbound'].forEach(dir => {
+    if (!data[dir] || !data[dir].departures) return;
+    data[dir].departures.forEach(dep => {
+      const points = [];
+      if (!dep.calling_points) return;
+      
+      dep.calling_points.forEach(cp => {
+        const miles = CRS_TO_MILES[cp.crs];
+        if (miles === undefined) return;
+        
+        const timeStr = (cp.expected && cp.expected !== 'On Time' && cp.expected !== 'No report') 
+          ? cp.expected : cp.scheduled;
+        const t = parseTime(timeStr);
+        if (t === null) return;
+        
+        points.push({ miles, time: t, station: cp.station, crs: cp.crs, scheduled: cp.scheduled, expected: cp.expected, platform: cp.platform });
+      });
+      
+      // Sort: northbound by ascending miles, southbound by descending miles
+      if (dir === 'northbound') {
+        points.sort((a, b) => a.miles - b.miles);
+      } else {
+        points.sort((a, b) => b.miles - a.miles);
+      }
+      
+      if (points.length < 2) return;
+      
+      trains.push({
+        direction: dir,
+        scheduled: dep.scheduled,
+        destination: dep.destination,
+        platform: dep.platform,
+        delayMins: dep.delay_mins || 0,
+        cancelled: dep.cancelled || false,
+        expected: dep.expected,
+        points
+      });
+    });
+  });
+  
+  return trains;
+}
+
+// ── Rendering ──
+function getTrainColor(train) {
+  if (train.cancelled) return { stroke: getCSS('--grey'), glow: getCSS('--grey').replace(')', ',0.3)').replace('rgb', 'rgba') };
+  if (train.delayMins > 5) return { stroke: getCSS('--red'), glow: getCSS('--red') };
+  if (train.delayMins > 0) return { stroke: getCSS('--amber'), glow: getCSS('--amber') };
+  if (train.direction === 'northbound') return { stroke: getCSS('--cyan'), glow: getCSS('--cyan-glow') };
+  return { stroke: getCSS('--orange'), glow: getCSS('--orange-glow') };
+}
+
+function getCSS(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+
+function isDark() {
+  return document.documentElement.classList.contains('dark');
+}
+
+function drawGrid() {
+  const chart = getChartArea();
+  const now = getNowMinutes();
+  
+  // Time range visible
+  const leftTime = now - (chart.w * NOW_PERCENT) / PIXELS_PER_MINUTE;
+  const rightTime = now + (chart.w * (1 - NOW_PERCENT)) / PIXELS_PER_MINUTE;
+  
+  // ── Horizontal grid lines (stations) ──
+  ctx.strokeStyle = getCSS('--grid-light');
+  ctx.lineWidth = 1;
+  STATIONS.forEach(s => {
+    const y = milesToY(s.miles);
+    ctx.beginPath();
+    ctx.moveTo(chart.x, y);
+    ctx.lineTo(chart.x + chart.w, y);
+    ctx.stroke();
+  });
+  
+  // Station labels
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  STATIONS.forEach(s => {
+    const y = milesToY(s.miles);
+    ctx.fillStyle = getCSS('--text-dim');
+    ctx.font = '11px SF Mono, Fira Code, monospace';
+    ctx.fillText(s.name, MARGIN_LEFT - 10, y);
+    
+    // Small tick
+    ctx.strokeStyle = getCSS('--grid-strong');
+    ctx.beginPath();
+    ctx.moveTo(MARGIN_LEFT - 4, y);
+    ctx.lineTo(MARGIN_LEFT, y);
+    ctx.stroke();
+  });
+  
+  // ── Vertical grid lines (time) ──
+  const startMin = Math.ceil(leftTime / 15) * 15;
+  for (let t = startMin; t <= rightTime; t += 15) {
+    const x = timeToX(t);
+    if (x < chart.x || x > chart.x + chart.w) continue;
+    
+    const isHour = t % 60 === 0;
+    ctx.strokeStyle = isHour ? getCSS('--grid-strong') : getCSS('--grid-light');
+    ctx.lineWidth = isHour ? 1 : 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, chart.y);
+    ctx.lineTo(x, chart.y + chart.h);
+    ctx.stroke();
+    
+    // Time labels at bottom
+    ctx.fillStyle = isHour ? getCSS('--text-dim') : getCSS('--text-label');
+    ctx.font = isHour ? 'bold 11px SF Mono, Fira Code, monospace' : '10px SF Mono, Fira Code, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(formatTime(t), x, chart.y + chart.h + 8);
+  }
+  
+  // Chart border
+  ctx.strokeStyle = getCSS('--grid-border');
+  ctx.lineWidth = 1;
+  ctx.strokeRect(chart.x, chart.y, chart.w, chart.h);
+}
+
+function drawNowLine() {
+  const chart = getChartArea();
+  const x = timeToX(getNowMinutes());
+  
+  if (x < chart.x || x > chart.x + chart.w) return;
+  
+  // Glow
+  const nowColor = getCSS('--now-line');
+  const grad = ctx.createLinearGradient(x - 6, 0, x + 6, 0);
+  grad.addColorStop(0, 'transparent');
+  grad.addColorStop(0.5, isDark() ? 'rgba(239,68,68,0.15)' : 'rgba(220,38,38,0.08)');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(x - 6, chart.y, 12, chart.h);
+  
+  // Line
+  ctx.strokeStyle = nowColor;
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(x, chart.y);
+  ctx.lineTo(x, chart.y + chart.h);
+  ctx.stroke();
+  
+  // Label
+  ctx.fillStyle = nowColor;
+  ctx.font = 'bold 9px SF Mono, Fira Code, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('NOW', x, chart.y - 4);
+}
+
+function interpolatePosition(train, timeMin) {
+  const pts = train.points;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const a = pts[i], b = pts[i + 1];
+    const tA = a.time, tB = b.time;
+    if (timeMin >= tA && timeMin <= tB) {
+      const frac = (timeMin - tA) / (tB - tA);
+      return a.miles + frac * (b.miles - a.miles);
+    }
+  }
+  return null;
+}
+
+function drawTrains(trains) {
+  const chart = getChartArea();
+  const now = getNowMinutes();
+  
+  // Store hit areas for hover
+  window._trainHitAreas = [];
+  
+  trains.forEach(train => {
+    const color = getTrainColor(train);
+    const pts = train.points;
+    if (pts.length < 2) return;
+    
+    // Check if any part is visible
+    const firstTime = pts[0].time;
+    const lastTime = pts[pts.length - 1].time;
+    const leftTime = now - (chart.w * NOW_PERCENT) / PIXELS_PER_MINUTE;
+    const rightTime = now + (chart.w * (1 - NOW_PERCENT)) / PIXELS_PER_MINUTE;
+    
+    if (lastTime < leftTime - 10 || firstTime > rightTime + 10) return;
+    
+    // Draw train line
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(chart.x, chart.y - 2, chart.w, chart.h + 4);
+    ctx.clip();
+    
+    // Glow effect
+    ctx.strokeStyle = color.glow;
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (train.cancelled) {
+      ctx.setLineDash([8, 6]);
+    } else {
+      ctx.setLineDash([]);
+    }
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = timeToX(p.time);
+      const y = milesToY(p.miles);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    
+    // Main line
+    ctx.strokeStyle = color.stroke;
+    ctx.lineWidth = train === hoveredTrain ? 3 : 1.8;
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const x = timeToX(p.time);
+      const y = milesToY(p.miles);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+    
+    // Station dots on the line
+    pts.forEach(p => {
+      const x = timeToX(p.time);
+      const y = milesToY(p.miles);
+      if (x < chart.x || x > chart.x + chart.w) return;
+      ctx.fillStyle = color.stroke;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    
+    // Departure time label along the line
+    const labelPt = pts[0];
+    const labelX = timeToX(labelPt.time);
+    const labelY = milesToY(labelPt.miles);
+    if (labelX >= chart.x - 30 && labelX <= chart.x + chart.w + 30) {
+      ctx.fillStyle = color.stroke;
+      ctx.font = '9px SF Mono, Fira Code, monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = train.direction === 'northbound' ? 'top' : 'bottom';
+      const offsetY = train.direction === 'northbound' ? 8 : -8;
+      ctx.fillText(train.scheduled, labelX, labelY + offsetY);
+    }
+    
+    ctx.restore();
+    
+    // "Now" position dot
+    if (now >= pts[0].time && now <= pts[pts.length - 1].time && !train.cancelled) {
+      const currentMiles = interpolatePosition(train, now);
+      if (currentMiles !== null) {
+        const dotX = timeToX(now);
+        const dotY = milesToY(currentMiles);
+        
+        if (dotX >= chart.x && dotX <= chart.x + chart.w) {
+          // Pulsing glow
+          const pulsePhase = (Date.now() % 2000) / 2000;
+          const pulseSize = 6 + Math.sin(pulsePhase * Math.PI * 2) * 3;
+          const pulseAlpha = 0.3 + Math.sin(pulsePhase * Math.PI * 2) * 0.2;
+          
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(chart.x, chart.y, chart.w, chart.h);
+          ctx.clip();
+          
+          ctx.fillStyle = color.stroke.replace(')', `,${pulseAlpha})`).replace('rgb', 'rgba');
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, pulseSize, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = color.stroke;
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = '#fff';
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 2, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.restore();
+        }
+      }
+    }
+    
+    // Hit area for hover (store line segments)
+    for (let i = 0; i < pts.length - 1; i++) {
+      const x1 = timeToX(pts[i].time), y1 = milesToY(pts[i].miles);
+      const x2 = timeToX(pts[i+1].time), y2 = milesToY(pts[i+1].miles);
+      window._trainHitAreas.push({ x1, y1, x2, y2, train });
+    }
+  });
+}
+
+function distToSegment(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function findHoveredTrain(mx, my) {
+  if (!window._trainHitAreas) return null;
+  let best = null, bestDist = 12;
+  for (const seg of window._trainHitAreas) {
+    const d = distToSegment(mx, my, seg.x1, seg.y1, seg.x2, seg.y2);
+    if (d < bestDist) {
+      bestDist = d;
+      best = seg.train;
+    }
+  }
+  return best;
+}
+
+function showTooltip(train, x, y) {
+  const tip = document.getElementById('tooltip');
+  if (!train) { tip.style.display = 'none'; return; }
+  
+  const dir = train.direction === 'northbound' ? '↑ Northbound' : '↓ Southbound';
+  const status = train.cancelled ? '🚫 CANCELLED' 
+    : train.delayMins > 0 ? `⚠️ ${train.delayMins} min late` 
+    : '✓ On Time';
+  
+  const origin = train.points[0];
+  const dest = train.points[train.points.length - 1];
+  
+  tip.innerHTML = `
+    <div class="tt-header">${dir} — ${train.scheduled}</div>
+    <div class="tt-row">${origin.station} → ${dest.station}</div>
+    <div class="tt-row">Departs: <span>${origin.scheduled}</span> → Arrives: <span>${dest.scheduled}</span></div>
+    ${train.platform ? `<div class="tt-row">Platform: <span>${train.platform}</span></div>` : ''}
+    <div class="tt-row">Status: <span>${status}</span></div>
+  `;
+  
+  tip.style.display = 'block';
+  // Position near cursor but keep on screen
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  const winW = window.innerWidth, winH = window.innerHeight;
+  let tx = x + 16, ty = y - 10;
+  if (tx + tw > winW - 10) tx = x - tw - 16;
+  if (ty + th > winH - 10) ty = winH - th - 10;
+  if (ty < 10) ty = 10;
+  tip.style.left = tx + 'px';
+  tip.style.top = ty + 'px';
+}
+
+// ── Main Loop ──
+let trains = [];
+
+function render() {
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
+  
+  ctx.fillStyle = getCSS('--bg');
+  ctx.fillRect(0, 0, w, h);
+  
+  drawGrid();
+  drawTrains(trains);
+  drawNowLine();
+  
+  // Clock
+  const now = new Date();
+  document.getElementById('clock').textContent = 
+    now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  
+  // Tooltip
+  hoveredTrain = findHoveredTrain(mouseX, mouseY);
+  showTooltip(hoveredTrain, mouseX, mouseY);
+  document.body.style.cursor = hoveredTrain ? 'pointer' : 'default';
+  
+  requestAnimationFrame(render);
+}
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+async function fetchData() {
+  try {
+    const res = await fetch('/api/all');
+    const data = await res.json();
+    trainData = data;
+    trains = processTrains(data);
+  } catch (e) {
+    console.error('Fetch error:', e);
+  }
+}
+
+function init() {
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  
+  resize();
+  window.addEventListener('resize', resize);
+  
+  canvas.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+  });
+  canvas.addEventListener('mouseleave', () => {
+    hoveredTrain = null;
+    document.getElementById('tooltip').style.display = 'none';
+  });
+  
+  fetchData();
+  setInterval(fetchData, 30000);
+  
+  requestAnimationFrame(render);
+}
+
+init();
+</script>
+</body>
+</html>
