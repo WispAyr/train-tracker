@@ -269,6 +269,12 @@
   .popup-train-delay { color: #ef4444; font-weight: 600; }
   .popup-train-ontime { color: #22c55e; }
 
+  /* Bus marker icon - override Leaflet defaults */
+  .bus-marker-icon, .bus-dot {
+    background: none !important;
+    border: none !important;
+  }
+
   /* Bus label */
   .bus-label {
     background: none !important;
@@ -444,9 +450,8 @@
     }).addTo(stationLayer);
   });
 
-  // ── Layers ──
-  const busLayer = L.layerGroup().addTo(map);
-  const trainLayer = L.layerGroup().addTo(map);
+  // ── Bus/train markers stored directly on map (layer groups had rendering bug) ──
+  // We track markers manually instead
 
   // ── State ──
   let busMarkers = {};    // id -> { marker, labelMarker, data }
@@ -478,9 +483,9 @@
   function busIcon(color, heading, routeNum) {
     const rot = heading || 0;
     return L.divIcon({
-      className: '',
-      html: `<div style="position:relative;width:22px;height:22px;">
-        <svg width="22" height="22" viewBox="0 0 22 22" style="transform:rotate(${rot}deg)">
+      className: 'bus-marker-icon',
+      html: `<div style="position:relative;width:22px;height:22px;pointer-events:auto;">
+        <svg width="22" height="22" viewBox="0 0 22 22" style="transform:rotate(${rot}deg);display:block;">
           <circle cx="11" cy="11" r="9" fill="${color}" opacity="0.9" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
           <polygon points="11,3 14,10 11,8 8,10" fill="rgba(255,255,255,0.85)"/>
         </svg>
@@ -594,7 +599,7 @@
     const operatorFilter = document.getElementById('operatorFilter').value;
 
     if (!showBuses) {
-      busLayer.clearLayers();
+      Object.values(busMarkers).forEach(b => { map.removeLayer(b.marker); if (b.labelMarker) map.removeLayer(b.labelMarker); });
       busMarkers = {};
       document.getElementById('busCount').textContent = '0';
       document.getElementById('busTotal').textContent = '0';
@@ -641,7 +646,6 @@
     const activeIds = new Set();
 
     filtered.forEach((bus, idx) => {
-      if (!bus.coordinates || bus.coordinates.length < 2) return;
       const lat = bus.coordinates[1];
       const lon = bus.coordinates[0];
       const id = bus.id || bus.vehicle?.url || `bus-${idx}`;
@@ -658,7 +662,6 @@
       if (busMarkers[id]) {
         // Update existing marker position with animation
         animateMarker(busMarkers[id].marker, [lat, lon], 2000);
-        busMarkers[id].marker.setIcon(busIcon(color, bus.heading, bus.line_name));
         busMarkers[id].marker.setPopupContent(popupContent);
         if (busMarkers[id].labelMarker) {
           animateMarker(busMarkers[id].labelMarker, [lat, lon], 2000);
@@ -666,20 +669,26 @@
       } else {
         // Create new marker
         const marker = L.marker([lat, lon], {
-          icon: busIcon(color, bus.heading, bus.line_name),
+          icon: L.divIcon({
+            className: 'bus-dot',
+            html: `<div style="width:14px;height:14px;background:${color};border-radius:50%;border:2px solid rgba(255,255,255,0.6);box-shadow:0 0 6px ${color};"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+            popupAnchor: [0, -10],
+          }),
           zIndexOffset: 100,
-        }).addTo(busLayer).bindPopup(popupContent);
+        }).addTo(map).bindPopup(popupContent);
 
         const labelMarker = L.marker([lat, lon], {
           icon: L.divIcon({
             className: 'bus-label',
             html: `<span style="color:${color}">${bus.line_name || ''}</span>`,
-            iconSize: null,
-            iconAnchor: [-12, 4],
+            iconSize: [40, 16],
+            iconAnchor: [-8, 8],
           }),
           interactive: false,
           zIndexOffset: 99,
-        }).addTo(busLayer);
+        }).addTo(map);
 
         busMarkers[id] = { marker, labelMarker, data: bus };
       }
@@ -688,8 +697,8 @@
     // Remove stale markers
     Object.keys(busMarkers).forEach(id => {
       if (!activeIds.has(id)) {
-        busLayer.removeLayer(busMarkers[id].marker);
-        if (busMarkers[id].labelMarker) busLayer.removeLayer(busMarkers[id].labelMarker);
+        map.removeLayer(busMarkers[id].marker);
+        if (busMarkers[id].labelMarker) map.removeLayer(busMarkers[id].labelMarker);
         delete busMarkers[id];
       }
     });
@@ -713,7 +722,7 @@
   function renderTrains(data) {
     const showTrains = document.getElementById('showTrains').checked;
     if (!showTrains) {
-      trainLayer.clearLayers();
+      Object.values(trainMarkers).forEach(t => map.removeLayer(t.marker)); trainMarkers = {};
       trainMarkers = {};
       document.getElementById('trainCount').textContent = '0';
       document.getElementById('trainTotal').textContent = '0';
@@ -756,7 +765,7 @@
           const marker = L.marker([pos.lat, pos.lon], {
             icon: trainIcon(dir),
             zIndexOffset: 200,
-          }).addTo(trainLayer).bindPopup(popupContent);
+          }).addTo(map).bindPopup(popupContent);
 
           trainMarkers[key] = { marker, data: train };
         }
@@ -766,7 +775,7 @@
     // Remove stale
     Object.keys(trainMarkers).forEach(key => {
       if (!activeKeys.has(key)) {
-        trainLayer.removeLayer(trainMarkers[key].marker);
+        map.removeLayer(trainMarkers[key].marker);
         delete trainMarkers[key];
       }
     });
