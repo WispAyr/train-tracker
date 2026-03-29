@@ -400,7 +400,9 @@
     tileLayer.setUrl(newUrl);
   }
 
-  if (localStorage.getItem('map-theme') === 'light') {
+  if (localStorage.getItem('map-theme') === 'dark') {
+    // User explicitly chose dark — keep it
+  } else {
     isDark = false;
     document.documentElement.classList.add('light');
   }

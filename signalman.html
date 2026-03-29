@@ -990,7 +990,10 @@ function toggleTheme() {
 
 (function initTheme() {
   const saved = localStorage.getItem('signal-theme');
-  if (saved === 'light') {
+  if (saved === 'dark') {
+    // User explicitly chose dark — keep it
+  } else {
+    // Default to light
     document.documentElement.classList.add('light');
     document.querySelector('.theme-btn').textContent = '🌙';
   }
