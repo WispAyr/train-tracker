@@ -3,57 +3,77 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ayr — Glasgow Central | Signalman Panel</title>
+<title>Ayr — Glasgow Central | NX Signalman Panel</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   :root {
-    --bg: #0a1a0a;
-    --panel-bg: #0d1f0d;
-    --track-color: #d4d4d8;
-    --track-glow: rgba(212, 212, 216, 0.15);
+    --bg: #050d05;
+    --panel-bg: #0a160a;
+    --panel-border: #1a2e1a;
+    --track-steel: #8a8a90;
+    --track-glow: rgba(138, 138, 144, 0.2);
+    --track-dark: #3a3a40;
     --station-color: #22c55e;
-    --station-dim: #15803d;
+    --station-glow: rgba(34, 197, 94, 0.6);
     --text-green: #4ade80;
-    --text-dim: #166534;
-    --signal-red: #ef4444;
-    --signal-yellow: #eab308;
-    --signal-green: #22c55e;
+    --text-bright: #86efac;
+    --text-dim: #1a5c2a;
+    --signal-red: #ff2020;
+    --signal-yellow: #ffcc00;
+    --signal-green: #00dd44;
+    --signal-off: #1a1a1a;
     --nb-color: #22d3ee;
-    --nb-glow: rgba(34, 211, 238, 0.3);
+    --nb-bg: rgba(34, 211, 238, 0.12);
+    --nb-glow: rgba(34, 211, 238, 0.5);
     --sb-color: #f97316;
-    --sb-glow: rgba(249, 115, 22, 0.3);
-    --occupied: rgba(239, 68, 68, 0.15);
+    --sb-bg: rgba(249, 115, 22, 0.12);
+    --sb-glow: rgba(249, 115, 22, 0.5);
+    --occupied-track: rgba(255, 32, 32, 0.3);
+    --occupied-border: rgba(255, 32, 32, 0.5);
     --border: #1a3a1a;
-    --header-bg: rgba(10, 26, 10, 0.95);
-    --tooltip-bg: rgba(10, 26, 10, 0.95);
-    --tooltip-border: #22c55e;
+    --header-bg: rgba(5, 13, 5, 0.97);
+    --rivet: #2a4a2a;
+    --crt-glow: rgba(34, 197, 94, 0.03);
+    --junction-color: #eab308;
+    --section-label: #0f3a1f;
+    --ticker-bg: #081208;
     --nav-link: #4ade80;
   }
 
   :root.light {
     --bg: #f0fdf4;
     --panel-bg: #ffffff;
-    --track-color: #374151;
-    --track-glow: rgba(55, 65, 81, 0.1);
+    --panel-border: #bbf7d0;
+    --track-steel: #6b7280;
+    --track-glow: rgba(107, 114, 128, 0.15);
+    --track-dark: #d1d5db;
     --station-color: #15803d;
-    --station-dim: #86efac;
+    --station-glow: rgba(21, 128, 61, 0.3);
     --text-green: #15803d;
+    --text-bright: #166534;
     --text-dim: #86efac;
     --signal-red: #dc2626;
     --signal-yellow: #ca8a04;
     --signal-green: #16a34a;
+    --signal-off: #e5e7eb;
     --nb-color: #0891b2;
-    --nb-glow: rgba(8, 145, 178, 0.2);
+    --nb-bg: rgba(8, 145, 178, 0.08);
+    --nb-glow: rgba(8, 145, 178, 0.3);
     --sb-color: #ea580c;
-    --sb-glow: rgba(234, 88, 12, 0.2);
-    --occupied: rgba(239, 68, 68, 0.08);
+    --sb-bg: rgba(234, 88, 12, 0.08);
+    --sb-glow: rgba(234, 88, 12, 0.3);
+    --occupied-track: rgba(220, 38, 38, 0.1);
+    --occupied-border: rgba(220, 38, 38, 0.3);
     --border: #bbf7d0;
-    --header-bg: rgba(240, 253, 244, 0.95);
-    --tooltip-bg: rgba(255, 255, 255, 0.98);
-    --tooltip-border: #15803d;
+    --header-bg: rgba(240, 253, 244, 0.97);
+    --rivet: #86efac;
+    --crt-glow: transparent;
+    --junction-color: #ca8a04;
+    --section-label: #dcfce7;
+    --ticker-bg: #f0fdf4;
     --nav-link: #15803d;
   }
 
@@ -65,25 +85,48 @@
     overflow-x: hidden;
   }
 
+  /* CRT phosphor glow overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at center, var(--crt-glow), transparent 70%);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* === HEADER === */
   #header {
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 200;
     background: var(--header-bg);
     backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 10px 24px;
+    border-bottom: 2px solid var(--border);
+    padding: 8px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
   #header h1 {
-    font-size: 16px;
-    letter-spacing: 2px;
+    font-size: 15px;
+    letter-spacing: 3px;
     text-transform: uppercase;
     color: var(--text-green);
     font-weight: 400;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #header h1 .panel-type {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    padding: 2px 8px;
+    border: 1px solid var(--border);
+    border-radius: 3px;
   }
 
   .header-right {
@@ -96,7 +139,7 @@
   .nav-links {
     display: flex;
     gap: 4px;
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 1px;
   }
 
@@ -105,7 +148,7 @@
     text-decoration: none;
     padding: 4px 10px;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 3px;
     transition: all 0.2s;
   }
 
@@ -118,7 +161,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 2px;
     text-transform: uppercase;
   }
@@ -133,19 +176,20 @@
 
   @keyframes pulse {
     0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--signal-red); }
-    50% { opacity: 0.4; box-shadow: 0 0 8px var(--signal-red); }
+    50% { opacity: 0.3; box-shadow: 0 0 12px var(--signal-red); }
   }
 
   #clock {
-    font-size: 22px;
-    letter-spacing: 3px;
-    color: var(--text-green);
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: var(--text-bright);
+    text-shadow: 0 0 8px var(--station-glow);
   }
 
   .theme-btn {
     background: none;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 3px;
     padding: 4px 8px;
     cursor: pointer;
     font-size: 16px;
@@ -153,233 +197,540 @@
     color: var(--text-green);
   }
 
+  /* === PANEL FRAME === */
+  #panel-frame {
+    margin: 16px;
+    border: 3px solid var(--panel-border);
+    border-radius: 8px;
+    background: var(--panel-bg);
+    position: relative;
+    box-shadow:
+      inset 0 0 60px rgba(0, 0, 0, 0.5),
+      0 0 20px rgba(0, 0, 0, 0.8);
+  }
+
+  /* Rivets */
+  .rivet {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: radial-gradient(circle at 3px 3px, var(--rivet), #0a0a0a);
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.05);
+    z-index: 10;
+  }
+
+  /* Panel label strip */
+  #panel-label-strip {
+    text-align: center;
+    padding: 8px 0 4px;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* === MAIN PANEL === */
   #panel-container {
-    padding: 40px 24px 24px;
+    padding: 8px 0;
     overflow-x: auto;
   }
 
   #panel {
     position: relative;
     min-width: 1100px;
-    height: 400px;
+    height: 520px;
     margin: 0 auto;
-    max-width: 1600px;
+    max-width: 1800px;
   }
 
-  /* Track line */
+  /* Scanline overlay */
+  #panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.04) 2px,
+      rgba(0, 0, 0, 0.04) 4px
+    );
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* Section labels (between major stations) */
+  .section-name {
+    position: absolute;
+    top: 42px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--section-label);
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  /* === TRACKS === */
+  .track-group {
+    position: absolute;
+    top: 230px;
+    left: 80px;
+    right: 80px;
+    height: 30px;
+  }
+
   .track-line {
     position: absolute;
-    top: 200px;
-    left: 60px;
-    right: 60px;
-    height: 4px;
-    background: var(--track-color);
+    left: 0;
+    right: 0;
+    height: 5px;
     border-radius: 2px;
-    box-shadow: 0 0 8px var(--track-glow);
   }
 
-  /* Second track (double track) */
-  .track-line-2 {
+  .track-up {
+    top: 0;
+    background: linear-gradient(180deg, var(--track-steel) 0%, var(--track-dark) 50%, var(--track-steel) 100%);
+    box-shadow: 0 0 6px var(--track-glow), 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .track-down {
+    top: 18px;
+    background: linear-gradient(180deg, var(--track-steel) 0%, var(--track-dark) 50%, var(--track-steel) 100%);
+    box-shadow: 0 0 6px var(--track-glow), 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  .track-label {
     position: absolute;
-    top: 212px;
-    left: 60px;
-    right: 60px;
-    height: 4px;
-    background: var(--track-color);
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .track-label-up {
+    top: -14px;
+    left: -4px;
+  }
+
+  .track-label-down {
+    top: 26px;
+    left: -4px;
+  }
+
+  /* Direction arrows at ends */
+  .direction-label {
+    position: absolute;
+    top: 236px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-green);
+    text-shadow: 0 0 6px var(--station-glow);
+  }
+
+  .direction-label.left { left: 8px; }
+  .direction-label.right { right: 8px; }
+
+  /* === TRACK CIRCUITS === */
+  .track-circuit {
+    position: absolute;
+    top: 228px;
+    height: 9px;
     border-radius: 2px;
-    box-shadow: 0 0 8px var(--track-glow);
-    opacity: 0.5;
+    transition: all 0.6s ease;
+    z-index: 5;
   }
 
-  /* Track sections */
-  .track-section {
+  .track-circuit.occupied {
+    background: var(--occupied-track);
+    box-shadow: 0 0 10px var(--occupied-border);
+  }
+
+  .track-circuit-down {
+    top: 246px;
+  }
+
+  /* === SIGNALS === */
+  .signal-post {
     position: absolute;
-    top: 196px;
-    height: 24px;
-    border-radius: 3px;
-    transition: background 0.5s;
+    z-index: 15;
+    transform: translateX(-50%);
   }
 
-  .track-section.occupied {
-    background: var(--occupied);
+  .signal-post .post-line {
+    position: absolute;
+    width: 2px;
+    background: #444;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
-  /* Station markers */
+  .signal-head {
+    width: 16px;
+    height: 44px;
+    background: linear-gradient(135deg, #2a2a2a 0%, #111 50%, #1a1a1a 100%);
+    border: 1.5px solid #444;
+    border-radius: 4px 4px 3px 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 3px 0;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  }
+
+  .signal-head::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 3px;
+    background: #444;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .signal-lamp {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--signal-off);
+    border: 1px solid #333;
+    transition: all 0.4s ease;
+    position: relative;
+  }
+
+  .signal-lamp.red-on {
+    background: var(--signal-red);
+    box-shadow: 0 0 8px var(--signal-red), 0 0 20px rgba(255, 32, 32, 0.4);
+    border-color: #ff4444;
+  }
+
+  .signal-lamp.yellow-on {
+    background: var(--signal-yellow);
+    box-shadow: 0 0 8px var(--signal-yellow), 0 0 20px rgba(255, 204, 0, 0.4);
+    border-color: #ffdd44;
+  }
+
+  .signal-lamp.green-on {
+    background: var(--signal-green);
+    box-shadow: 0 0 8px var(--signal-green), 0 0 16px rgba(0, 221, 68, 0.3);
+    border-color: #22ee66;
+  }
+
+  /* Signal above track (up direction) */
+  .signal-up {
+    top: 150px;
+  }
+
+  .signal-up .post-line {
+    top: 44px;
+    height: 34px;
+  }
+
+  /* Signal below track (down direction) */
+  .signal-down {
+    top: 262px;
+  }
+
+  .signal-down .post-line {
+    bottom: 44px;
+    height: 34px;
+  }
+
+  /* === STATION MARKERS === */
   .station {
     position: absolute;
-    top: 170px;
     transform: translateX(-50%);
     text-align: center;
     cursor: pointer;
-    z-index: 10;
+    z-index: 20;
+  }
+
+  .station-diamond-wrap {
+    position: absolute;
+    top: 224px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 25;
   }
 
   .station-diamond {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     background: var(--station-color);
     transform: rotate(45deg);
-    margin: 0 auto 8px;
-    border: 2px solid var(--bg);
-    box-shadow: 0 0 6px var(--station-color);
+    border: 2px solid rgba(0,0,0,0.5);
+    box-shadow: 0 0 10px var(--station-glow), 0 0 20px rgba(34, 197, 94, 0.2);
     transition: all 0.3s;
   }
 
   .station:hover .station-diamond {
-    transform: rotate(45deg) scale(1.3);
-    box-shadow: 0 0 12px var(--station-color);
+    transform: rotate(45deg) scale(1.4);
+    box-shadow: 0 0 16px var(--station-glow), 0 0 30px rgba(34, 197, 94, 0.4);
   }
 
-  .station-label {
+  .station-diamond-wrap-down {
+    top: 253px;
+  }
+
+  /* Station labels */
+  .station-label-group {
+    position: absolute;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 20;
+  }
+
+  .station-label-above {
+    top: 60px;
+  }
+
+  .station-label-above.angled {
+    transform: translateX(-50%) rotate(-35deg);
+    transform-origin: bottom center;
+    top: 55px;
+  }
+
+  .station-name {
     font-size: 11px;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     color: var(--text-green);
     white-space: nowrap;
-    position: absolute;
-    top: 48px;
-    left: 50%;
-    transform: translateX(-50%);
+    text-shadow: 0 0 4px var(--crt-glow);
+    text-transform: uppercase;
   }
 
-  .station-crs {
-    font-size: 9px;
-    color: var(--text-dim);
-    letter-spacing: 2px;
-    position: absolute;
-    top: 64px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  .station-mile {
+  .station-info {
     font-size: 8px;
     color: var(--text-dim);
-    position: absolute;
-    top: 78px;
-    left: 50%;
-    transform: translateX(-50%);
+    letter-spacing: 1px;
+    margin-top: 2px;
   }
 
-  /* Signal aspects */
-  .signal {
-    position: absolute;
-    top: 134px;
-    width: 10px;
-    height: 28px;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    border-radius: 3px;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
-    padding: 2px;
+  /* Platform indicators */
+  .platform-box {
+    display: inline-block;
+    font-size: 7px;
+    padding: 1px 3px;
+    border: 1px solid var(--text-dim);
+    border-radius: 2px;
+    margin: 0 1px;
+    color: var(--text-dim);
+    letter-spacing: 0;
   }
 
-  .signal-lamp {
+  .platform-box.active {
+    border-color: var(--station-color);
+    color: var(--station-color);
+    background: rgba(34, 197, 94, 0.1);
+  }
+
+  /* === JUNCTION INDICATOR === */
+  .junction-indicator {
+    position: absolute;
+    z-index: 20;
+  }
+
+  .junction-branch {
+    position: absolute;
+    height: 3px;
+    background: var(--junction-color);
+    opacity: 0.6;
+    border-radius: 1px;
+    transform-origin: left center;
+  }
+
+  .junction-label {
+    position: absolute;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--junction-color);
+    white-space: nowrap;
+  }
+
+  /* === APPROACH INDICATORS === */
+  .approach-dot {
+    position: absolute;
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #222;
+    background: var(--signal-off);
+    border: 1px solid #333;
     transition: all 0.5s;
+    z-index: 15;
   }
 
-  .signal-lamp.red { background: var(--signal-red); box-shadow: 0 0 6px var(--signal-red); }
-  .signal-lamp.yellow { background: var(--signal-yellow); box-shadow: 0 0 6px var(--signal-yellow); }
-  .signal-lamp.green { background: var(--signal-green); box-shadow: 0 0 4px var(--signal-green); }
+  .approach-dot.lit {
+    background: var(--text-green);
+    box-shadow: 0 0 6px var(--station-glow);
+    border-color: var(--station-color);
+  }
 
-  /* Train indicators */
-  .train {
+  /* === TRAIN BERTHS === */
+  .train-berth {
     position: absolute;
-    top: 170px;
+    z-index: 30;
     transform: translateX(-50%);
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    white-space: nowrap;
-    z-index: 20;
+    transition: left 1.5s ease-in-out, top 0.3s;
     cursor: pointer;
-    transition: all 0.8s ease;
-    border: 1px solid;
   }
 
-  .train.northbound {
-    top: 230px;
-    background: rgba(34, 211, 238, 0.15);
+  .berth-box {
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1.5px solid;
+    position: relative;
+  }
+
+  .berth-box::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border-radius: 4px;
+    opacity: 0.3;
+    z-index: -1;
+  }
+
+  .train-berth.northbound {
+    top: 278px;
+  }
+
+  .train-berth.northbound .berth-box {
+    background: var(--nb-bg);
     color: var(--nb-color);
-    border-color: var(--nb-color);
-    box-shadow: 0 0 8px var(--nb-glow);
+    border-color: rgba(34, 211, 238, 0.5);
+    box-shadow: 0 0 12px var(--nb-glow), inset 0 0 12px rgba(34, 211, 238, 0.05);
+    text-shadow: 0 0 6px var(--nb-glow);
   }
 
-  .train.southbound {
-    top: 155px;
-    background: rgba(249, 115, 22, 0.15);
+  .train-berth.southbound {
+    top: 178px;
+  }
+
+  .train-berth.southbound .berth-box {
+    background: var(--sb-bg);
     color: var(--sb-color);
-    border-color: var(--sb-color);
-    box-shadow: 0 0 8px var(--sb-glow);
+    border-color: rgba(249, 115, 22, 0.5);
+    box-shadow: 0 0 12px var(--sb-glow), inset 0 0 12px rgba(249, 115, 22, 0.05);
+    text-shadow: 0 0 6px var(--sb-glow);
   }
 
-  .train-arrow {
+  .berth-arrow {
+    font-size: 10px;
+    opacity: 0.8;
+  }
+
+  .berth-dest {
     font-size: 8px;
-    margin: 0 2px;
+    opacity: 0.6;
+    letter-spacing: 1px;
   }
 
-  /* Tooltip */
+  /* Connecting line from berth to track */
+  .berth-connector {
+    position: absolute;
+    width: 1px;
+    background: currentColor;
+    opacity: 0.2;
+    left: 50%;
+  }
+
+  .train-berth.northbound .berth-connector {
+    top: -24px;
+    height: 24px;
+  }
+
+  .train-berth.southbound .berth-connector {
+    bottom: -24px;
+    height: 24px;
+  }
+
+  /* === TOOLTIP === */
   .tooltip {
     display: none;
-    position: absolute;
-    background: var(--tooltip-bg);
-    border: 1px solid var(--tooltip-border);
+    position: fixed;
+    background: var(--panel-bg);
+    border: 1.5px solid var(--station-color);
     border-radius: 6px;
-    padding: 12px 16px;
+    padding: 14px 18px;
     font-size: 12px;
-    z-index: 50;
-    min-width: 200px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    z-index: 500;
+    min-width: 220px;
+    max-width: 320px;
+    box-shadow: 0 4px 30px rgba(0,0,0,0.6), 0 0 15px var(--station-glow);
     pointer-events: none;
   }
 
   .tooltip.visible { display: block; }
 
   .tooltip h3 {
-    font-size: 14px;
+    font-size: 13px;
     margin-bottom: 8px;
     color: var(--station-color);
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
   }
 
   .tooltip .tt-row {
     display: flex;
     justify-content: space-between;
     padding: 2px 0;
-    gap: 12px;
+    gap: 10px;
+    font-size: 11px;
   }
 
-  .tooltip .tt-dir { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+  .tooltip .tt-dir {
+    color: var(--text-dim);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-top: 8px;
+    margin-bottom: 2px;
+  }
 
-  /* Legend */
+  .tooltip .tt-delay { color: var(--signal-red); }
+  .tooltip .tt-ontime { color: var(--signal-green); }
+
+  /* === LEGEND === */
   #legend {
     display: flex;
-    gap: 24px;
+    gap: 20px;
     justify-content: center;
-    padding: 16px;
-    font-size: 11px;
+    padding: 10px 16px;
+    font-size: 10px;
     letter-spacing: 1px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
   }
 
   .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
 
   .legend-swatch {
     width: 24px;
-    height: 12px;
-    border-radius: 3px;
+    height: 10px;
+    border-radius: 2px;
     border: 1px solid;
   }
 
@@ -389,59 +740,99 @@
     border-radius: 50%;
   }
 
-  /* Footer info */
+  .legend-diamond {
+    width: 8px;
+    height: 8px;
+    transform: rotate(45deg);
+  }
+
+  /* === INFO BAR === */
   #info-bar {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    padding: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 1px;
+    border-top: 2px solid var(--border);
+    background: var(--border);
     font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 1px;
   }
 
-  /* Scanline effect (subtle) */
-  #panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.03) 2px,
-      rgba(0,0,0,0.03) 4px
-    );
-    pointer-events: none;
-    z-index: 5;
+  .info-cell {
+    background: var(--panel-bg);
+    padding: 8px 16px;
+    text-align: center;
   }
 
-  /* Direction labels */
-  .direction-label {
-    position: absolute;
-    top: 200px;
-    font-size: 10px;
+  .info-cell .info-label {
+    font-size: 8px;
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--text-dim);
+    margin-bottom: 2px;
   }
 
-  .direction-label.left { left: 0; transform: translateY(-50%); }
-  .direction-label.right { right: 0; transform: translateY(-50%); }
+  .info-cell .info-value {
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--text-green);
+  }
 
-  /* Mobile */
+  .info-cell .info-value.delay { color: var(--signal-yellow); }
+  .info-cell .info-value.alert { color: var(--signal-red); }
+
+  /* === TICKER === */
+  #ticker {
+    border-top: 1px solid var(--border);
+    background: var(--ticker-bg);
+    padding: 6px 0;
+    overflow: hidden;
+    position: relative;
+    height: 28px;
+  }
+
+  #ticker-content {
+    white-space: nowrap;
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    position: absolute;
+    animation: ticker-scroll 60s linear infinite;
+  }
+
+  @keyframes ticker-scroll {
+    0% { transform: translateX(100vw); }
+    100% { transform: translateX(-100%); }
+  }
+
+  .ticker-separator {
+    display: inline;
+    margin: 0 24px;
+    color: var(--border);
+  }
+
+  .ticker-delay {
+    color: var(--signal-yellow);
+  }
+
+  .ticker-cancel {
+    color: var(--signal-red);
+  }
+
+  /* === MOBILE === */
   @media (max-width: 768px) {
-    #header { flex-direction: column; gap: 8px; }
+    #header { flex-direction: column; gap: 8px; padding: 6px 12px; }
     #panel { min-width: 900px; }
+    #panel-frame { margin: 8px; }
+    #info-bar { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <h1>☐ Ayr — Glasgow Central <span style="font-size:11px; color:var(--text-dim); margin-left:8px;">Signalman Panel</span></h1>
+  <h1>
+    ◆ AYR — GLASGOW CENTRAL
+    <span class="panel-type">NX PANEL</span>
+  </h1>
   <div class="header-right">
     <nav class="nav-links">
       <a href="/">Diagram</a>
@@ -454,70 +845,135 @@
   </div>
 </div>
 
-<div id="panel-container">
-  <div id="panel">
-    <div class="direction-label left">◀ AYR</div>
-    <div class="track-line"></div>
-    <div class="track-line-2"></div>
-    <div class="direction-label right">GLC ▶</div>
-  </div>
-</div>
+<div id="panel-frame">
+  <!-- Rivets -->
+  <div class="rivet" style="top:6px;left:6px;"></div>
+  <div class="rivet" style="top:6px;right:6px;"></div>
+  <div class="rivet" style="bottom:6px;left:6px;"></div>
+  <div class="rivet" style="bottom:6px;right:6px;"></div>
+  <div class="rivet" style="top:6px;left:50%;"></div>
+  <div class="rivet" style="bottom:6px;left:50%;"></div>
 
-<div id="legend">
-  <div class="legend-item">
-    <div class="legend-swatch" style="background:rgba(34,211,238,0.15);border-color:var(--nb-color);"></div>
-    Northbound (→ GLC)
-  </div>
-  <div class="legend-item">
-    <div class="legend-swatch" style="background:rgba(249,115,22,0.15);border-color:var(--sb-color);"></div>
-    Southbound (→ AYR)
-  </div>
-  <div class="legend-item">
-    <div class="legend-signal" style="background:var(--signal-green);box-shadow:0 0 4px var(--signal-green);"></div>
-    Clear
-  </div>
-  <div class="legend-item">
-    <div class="legend-signal" style="background:var(--signal-yellow);box-shadow:0 0 4px var(--signal-yellow);"></div>
-    Caution
-  </div>
-  <div class="legend-item">
-    <div class="legend-signal" style="background:var(--signal-red);box-shadow:0 0 4px var(--signal-red);"></div>
-    Danger
-  </div>
-</div>
+  <div id="panel-label-strip">Ayrshire Coast — Glasgow Central · Signalling Panel · Auto</div>
 
-<div id="info-bar">
-  <span>Auto-refresh: 30s</span>
-  <span id="train-count">Trains: --</span>
-  <span id="last-update">Updated: --</span>
+  <div id="panel-container">
+    <div id="panel">
+      <div class="direction-label left">◀ AYR</div>
+      <div class="direction-label right">GLC ▶</div>
+
+      <div class="track-group" id="track-group">
+        <div class="track-label track-label-up">UP</div>
+        <div class="track-line track-up" id="track-up"></div>
+        <div class="track-line track-down" id="track-down"></div>
+        <div class="track-label track-label-down">DN</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="legend">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:var(--nb-bg);border-color:rgba(34,211,238,0.5);"></div>
+      Northbound → GLC
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:var(--sb-bg);border-color:rgba(249,115,22,0.5);"></div>
+      Southbound → AYR
+    </div>
+    <div class="legend-item">
+      <div class="legend-signal" style="background:var(--signal-green);box-shadow:0 0 6px var(--signal-green);"></div>
+      Clear
+    </div>
+    <div class="legend-item">
+      <div class="legend-signal" style="background:var(--signal-yellow);box-shadow:0 0 6px var(--signal-yellow);"></div>
+      Caution
+    </div>
+    <div class="legend-item">
+      <div class="legend-signal" style="background:var(--signal-red);box-shadow:0 0 6px var(--signal-red);"></div>
+      Danger
+    </div>
+    <div class="legend-item">
+      <div class="legend-diamond" style="background:var(--station-color);box-shadow:0 0 4px var(--station-glow);"></div>
+      Station
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:var(--occupied-track);border-color:var(--occupied-border);"></div>
+      Occupied
+    </div>
+  </div>
+
+  <div id="info-bar">
+    <div class="info-cell">
+      <div class="info-label">Trains on Route</div>
+      <div class="info-value" id="info-trains">--</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-label">Next from Ayr</div>
+      <div class="info-value" id="info-next-ayr">--:--</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-label">Next from Glasgow</div>
+      <div class="info-value" id="info-next-glc">--:--</div>
+    </div>
+    <div class="info-cell">
+      <div class="info-label">Last Updated</div>
+      <div class="info-value" id="info-updated">--:--:--</div>
+    </div>
+  </div>
+
+  <div id="ticker">
+    <div id="ticker-content">
+      SIGNALLING PANEL — AYR TO GLASGOW CENTRAL VIA KILWINNING — AWAITING DATA...
+    </div>
+  </div>
 </div>
 
 <div class="tooltip" id="tooltip"></div>
 
 <script>
 const STATIONS = [
-  { crs: 'AYR', name: 'Ayr', mile: 0 },
-  { crs: 'NOA', name: 'Newton-on-Ayr', mile: 0.7 },
-  { crs: 'PTW', name: 'Prestwick Town', mile: 1.8 },
-  { crs: 'PRA', name: 'Prestwick Airport', mile: 2.5 },
-  { crs: 'TRN', name: 'Troon', mile: 4.5 },
-  { crs: 'BSS', name: 'Barassie', mile: 5.5 },
-  { crs: 'IRV', name: 'Irvine', mile: 7.5 },
-  { crs: 'KWN', name: 'Kilwinning', mile: 9.5 },
-  { crs: 'DLY', name: 'Dalry', mile: 14 },
-  { crs: 'LHW', name: 'Lochwinnoch', mile: 18 },
-  { crs: 'MIK', name: 'Milliken Park', mile: 21 },
-  { crs: 'JHN', name: 'Johnstone', mile: 22 },
-  { crs: 'PYG', name: 'Paisley Gilmour St', mile: 26 },
-  { crs: 'GLC', name: 'Glasgow Central', mile: 31 },
+  { crs: 'AYR', name: 'Ayr',               mile: 0,    platforms: [1,2,3,4], major: true },
+  { crs: 'NOA', name: 'Newton-on-Ayr',      mile: 0.7,  platforms: [1,2],     major: false },
+  { crs: 'PTW', name: 'Prestwick Town',     mile: 1.8,  platforms: [1,2],     major: false },
+  { crs: 'PRA', name: 'Prestwick Airport',  mile: 2.5,  platforms: [1,2],     major: false },
+  { crs: 'TRN', name: 'Troon',              mile: 4.5,  platforms: [1,2],     major: true },
+  { crs: 'BSS', name: 'Barassie',           mile: 5.5,  platforms: [1,2],     major: false },
+  { crs: 'IRV', name: 'Irvine',             mile: 7.5,  platforms: [1,2],     major: true },
+  { crs: 'KWN', name: 'Kilwinning',         mile: 9.5,  platforms: [1,2,3],   major: true, junction: true },
+  { crs: 'DLY', name: 'Dalry',              mile: 14,   platforms: [1,2],     major: false },
+  { crs: 'LHW', name: 'Lochwinnoch',        mile: 18,   platforms: [1,2],     major: false },
+  { crs: 'MIK', name: 'Milliken Park',      mile: 21,   platforms: [1,2],     major: false },
+  { crs: 'JHN', name: 'Johnstone',          mile: 22,   platforms: [1,2],     major: true },
+  { crs: 'PYG', name: 'Paisley Gilmour St', mile: 26,   platforms: [1,2,3],   major: true },
+  { crs: 'GLC', name: 'Glasgow Central',    mile: 31,   platforms: [1,2,3,4], major: true },
+];
+
+// Section names between major points
+const SECTIONS = [
+  { from: 'AYR', to: 'TRN', name: 'Ayr Coast' },
+  { from: 'TRN', to: 'KWN', name: 'Irvine Valley' },
+  { from: 'KWN', to: 'JHN', name: 'Dalry–Johnstone' },
+  { from: 'JHN', to: 'GLC', name: 'Glasgow Approach' },
 ];
 
 const TOTAL_MILES = 31;
-const PANEL_LEFT = 60;
+const PANEL_LEFT = 80;
 let panelWidth = 0;
 let allData = null;
+let prevTrainPositions = [];
 
-// Theme
+// ===== SQRT-based station spacing =====
+// This spreads out the close Ayr-end stations while compressing the longer gaps
+function mileToNorm(mile) {
+  // Square root scaling — gives much more room to close-together stations
+  return Math.sqrt(mile / TOTAL_MILES);
+}
+
+function mileToX(mile) {
+  const trackWidth = panelWidth - PANEL_LEFT * 2;
+  return PANEL_LEFT + mileToNorm(mile) * trackWidth;
+}
+
+// ===== THEME =====
 function toggleTheme() {
   const root = document.documentElement;
   if (root.classList.contains('light')) {
@@ -539,28 +995,22 @@ function toggleTheme() {
   }
 })();
 
-// Clock
+// ===== CLOCK =====
 function updateClock() {
   const now = new Date();
-  document.getElementById('clock').textContent = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// Convert mile to pixel position
-function mileToX(mile) {
-  const trackWidth = panelWidth - PANEL_LEFT * 2;
-  return PANEL_LEFT + (mile / TOTAL_MILES) * trackWidth;
-}
-
-// Parse time string to minutes since midnight
+// ===== TIME HELPERS =====
 function timeToMins(t) {
   if (!t) return null;
   const m = t.match(/(\d{2}):(\d{2})/);
   return m ? parseInt(m[1]) * 60 + parseInt(m[2]) : null;
 }
 
-// Get effective time (expected or scheduled)
 function getEffectiveTime(cp) {
   if (cp.expected && cp.expected !== 'On Time' && cp.expected !== 'Cancelled') {
     const m = cp.expected.match(/(\d{2}:\d{2})/);
@@ -569,48 +1019,44 @@ function getEffectiveTime(cp) {
   return cp.scheduled;
 }
 
-// Interpolate train position along route
-function getTrainPosition(callingPoints, direction) {
+function nowMins() {
   const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  return now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+}
 
-  // Map calling points to station miles
+// ===== TRAIN POSITION INTERPOLATION =====
+function getTrainPosition(callingPoints, direction) {
+  const nm = nowMins();
   const points = [];
+
   for (const cp of callingPoints) {
     const stn = STATIONS.find(s => s.crs === cp.crs);
     if (!stn) continue;
     const t = timeToMins(getEffectiveTime(cp));
     if (t === null) continue;
-    points.push({ mile: stn.mile, time: t, crs: cp.crs, station: cp.station });
+    points.push({ mile: stn.mile, time: t, crs: cp.crs, station: cp.station || stn.name });
   }
 
   if (points.length < 2) return null;
-
-  // Sort by time
   points.sort((a, b) => a.time - b.time);
 
   const firstTime = points[0].time;
   const lastTime = points[points.length - 1].time;
 
-  // Train hasn't departed yet
-  if (nowMins < firstTime - 2) return null;
-  // Train has arrived
-  if (nowMins > lastTime + 2) return null;
+  if (nm < firstTime - 3) return null;
+  if (nm > lastTime + 3) return null;
 
-  // At or before first station
-  if (nowMins <= firstTime) {
+  if (nm <= firstTime) {
     return { mile: points[0].mile, fromCrs: points[0].crs, toCrs: points[0].crs, progress: 0 };
   }
 
-  // At or after last station
-  if (nowMins >= lastTime) {
+  if (nm >= lastTime) {
     return { mile: points[points.length - 1].mile, fromCrs: points[points.length - 1].crs, toCrs: points[points.length - 1].crs, progress: 1 };
   }
 
-  // Between two stations - interpolate
   for (let i = 0; i < points.length - 1; i++) {
-    if (nowMins >= points[i].time && nowMins <= points[i + 1].time) {
-      const fraction = (nowMins - points[i].time) / (points[i + 1].time - points[i].time);
+    if (nm >= points[i].time && nm <= points[i + 1].time) {
+      const fraction = (nm - points[i].time) / (points[i + 1].time - points[i].time);
       const mile = points[i].mile + fraction * (points[i + 1].mile - points[i].mile);
       return { mile, fromCrs: points[i].crs, toCrs: points[i + 1].crs, progress: fraction };
     }
@@ -619,133 +1065,306 @@ function getTrainPosition(callingPoints, direction) {
   return null;
 }
 
-// Build station elements
-function buildStations() {
+// ===== BUILD PANEL =====
+function buildPanel() {
   const panel = document.getElementById('panel');
   panelWidth = panel.offsetWidth;
 
-  // Clear old stations, signals, sections
-  panel.querySelectorAll('.station, .signal, .track-section, .train').forEach(el => el.remove());
+  // Clear dynamic elements
+  panel.querySelectorAll('.station, .signal-post, .track-circuit, .train-berth, .section-name, .junction-indicator, .approach-dot, .station-label-group').forEach(el => el.remove());
 
-  // Track sections between stations
+  // --- Section names ---
+  SECTIONS.forEach(sec => {
+    const fromStn = STATIONS.find(s => s.crs === sec.from);
+    const toStn = STATIONS.find(s => s.crs === sec.to);
+    if (!fromStn || !toStn) return;
+    const midMile = (fromStn.mile + toStn.mile) / 2;
+    const el = document.createElement('div');
+    el.className = 'section-name';
+    el.style.left = mileToX(midMile) + 'px';
+    el.textContent = sec.name;
+    panel.appendChild(el);
+  });
+
+  // --- Track circuits ---
   for (let i = 0; i < STATIONS.length - 1; i++) {
-    const section = document.createElement('div');
-    section.className = 'track-section';
-    section.id = `section-${STATIONS[i].crs}-${STATIONS[i + 1].crs}`;
     const x1 = mileToX(STATIONS[i].mile);
     const x2 = mileToX(STATIONS[i + 1].mile);
-    section.style.left = x1 + 'px';
-    section.style.width = (x2 - x1) + 'px';
-    panel.appendChild(section);
+
+    // Up line circuit
+    const circuitUp = document.createElement('div');
+    circuitUp.className = 'track-circuit';
+    circuitUp.id = `tc-up-${STATIONS[i].crs}-${STATIONS[i + 1].crs}`;
+    circuitUp.style.left = (x1 + 2) + 'px';
+    circuitUp.style.width = (x2 - x1 - 4) + 'px';
+    panel.appendChild(circuitUp);
+
+    // Down line circuit
+    const circuitDn = document.createElement('div');
+    circuitDn.className = 'track-circuit track-circuit-down';
+    circuitDn.id = `tc-dn-${STATIONS[i].crs}-${STATIONS[i + 1].crs}`;
+    circuitDn.style.left = (x1 + 2) + 'px';
+    circuitDn.style.width = (x2 - x1 - 4) + 'px';
+    panel.appendChild(circuitDn);
   }
 
-  // Stations and signals
+  // --- Station labels and markers ---
+  // Determine which stations need angled labels (close together)
+  const stationXPositions = STATIONS.map(s => ({ crs: s.crs, x: mileToX(s.mile) }));
+  const MIN_LABEL_GAP = 85;
+
   STATIONS.forEach((stn, i) => {
     const x = mileToX(stn.mile);
 
-    // Signal
-    const signal = document.createElement('div');
-    signal.className = 'signal';
-    signal.id = `signal-${stn.crs}`;
-    signal.style.left = (x + 12) + 'px';
-    signal.innerHTML = `
-      <div class="signal-lamp" id="lamp-red-${stn.crs}"></div>
-      <div class="signal-lamp" id="lamp-yellow-${stn.crs}"></div>
-      <div class="signal-lamp green" id="lamp-green-${stn.crs}"></div>
-    `;
-    panel.appendChild(signal);
+    // Check if too close to previous
+    let needsAngle = false;
+    if (i > 0) {
+      const prevX = mileToX(STATIONS[i - 1].mile);
+      if (x - prevX < MIN_LABEL_GAP) needsAngle = true;
+    }
+    if (i < STATIONS.length - 1) {
+      const nextX = mileToX(STATIONS[i + 1].mile);
+      if (nextX - x < MIN_LABEL_GAP && i % 2 === 1) needsAngle = true;
+    }
 
-    // Station marker
-    const station = document.createElement('div');
-    station.className = 'station';
-    station.style.left = x + 'px';
-    station.dataset.crs = stn.crs;
-    station.innerHTML = `
-      <div class="station-diamond"></div>
-      <div class="station-label">${stn.name}</div>
-      <div class="station-crs">${stn.crs}</div>
-      <div class="station-mile">${stn.mile}mi</div>
+    // Station label group (above track)
+    const labelGroup = document.createElement('div');
+    labelGroup.className = 'station-label-group station-label-above' + (needsAngle ? ' angled' : '');
+    labelGroup.style.left = x + 'px';
+    
+    let platformHtml = '';
+    if (stn.platforms) {
+      platformHtml = '<div style="margin-top:3px;">' +
+        stn.platforms.map(p => `<span class="platform-box" id="plat-${stn.crs}-${p}">${p}</span>`).join('') +
+        '</div>';
+    }
+
+    labelGroup.innerHTML = `
+      <div class="station-name">${stn.name}</div>
+      <div class="station-info">${stn.crs} · ${stn.mile}mi</div>
+      ${platformHtml}
     `;
-    station.addEventListener('mouseenter', (e) => showStationTooltip(e, stn));
-    station.addEventListener('mouseleave', hideTooltip);
-    panel.appendChild(station);
+    panel.appendChild(labelGroup);
+
+    // Diamond on UP track
+    const diamondUp = document.createElement('div');
+    diamondUp.className = 'station station-diamond-wrap';
+    diamondUp.style.left = x + 'px';
+    diamondUp.dataset.crs = stn.crs;
+    diamondUp.innerHTML = '<div class="station-diamond"></div>';
+    diamondUp.addEventListener('mouseenter', (e) => showStationTooltip(e, stn));
+    diamondUp.addEventListener('mouseleave', hideTooltip);
+    panel.appendChild(diamondUp);
+
+    // Diamond on DOWN track
+    const diamondDn = document.createElement('div');
+    diamondDn.className = 'station station-diamond-wrap station-diamond-wrap-down';
+    diamondDn.style.left = x + 'px';
+    diamondDn.dataset.crs = stn.crs;
+    diamondDn.innerHTML = '<div class="station-diamond"></div>';
+    diamondDn.addEventListener('mouseenter', (e) => showStationTooltip(e, stn));
+    diamondDn.addEventListener('mouseleave', hideTooltip);
+    panel.appendChild(diamondDn);
+
+    // --- Signals (UP line — above track) ---
+    const sigUp = document.createElement('div');
+    sigUp.className = 'signal-post signal-up';
+    sigUp.style.left = (x + 18) + 'px';
+    sigUp.innerHTML = `
+      <div class="signal-head">
+        <div class="signal-lamp" id="sig-up-r-${stn.crs}"></div>
+        <div class="signal-lamp" id="sig-up-y-${stn.crs}"></div>
+        <div class="signal-lamp green-on" id="sig-up-g-${stn.crs}"></div>
+      </div>
+      <div class="post-line"></div>
+    `;
+    panel.appendChild(sigUp);
+
+    // --- Signals (DOWN line — below track) ---
+    const sigDn = document.createElement('div');
+    sigDn.className = 'signal-post signal-down';
+    sigDn.style.left = (x - 18) + 'px';
+    sigDn.innerHTML = `
+      <div class="post-line"></div>
+      <div class="signal-head">
+        <div class="signal-lamp" id="sig-dn-r-${stn.crs}"></div>
+        <div class="signal-lamp" id="sig-dn-y-${stn.crs}"></div>
+        <div class="signal-lamp green-on" id="sig-dn-g-${stn.crs}"></div>
+      </div>
+    `;
+    panel.appendChild(sigDn);
+
+    // --- Approach dots (midpoint between this and next station) ---
+    if (i < STATIONS.length - 1) {
+      const nextMile = STATIONS[i + 1].mile;
+      const midMile = (stn.mile + nextMile) / 2;
+      const midX = mileToX(midMile);
+
+      const dotUp = document.createElement('div');
+      dotUp.className = 'approach-dot';
+      dotUp.id = `app-up-${stn.crs}-${STATIONS[i + 1].crs}`;
+      dotUp.style.left = (midX - 3) + 'px';
+      dotUp.style.top = '222px';
+      panel.appendChild(dotUp);
+
+      const dotDn = document.createElement('div');
+      dotDn.className = 'approach-dot';
+      dotDn.id = `app-dn-${stn.crs}-${STATIONS[i + 1].crs}`;
+      dotDn.style.left = (midX - 3) + 'px';
+      dotDn.style.top = '268px';
+      panel.appendChild(dotDn);
+    }
   });
+
+  // --- Junction indicator at Kilwinning ---
+  const kwnStn = STATIONS.find(s => s.crs === 'KWN');
+  if (kwnStn) {
+    const kwnX = mileToX(kwnStn.mile);
+    const jct = document.createElement('div');
+    jct.className = 'junction-indicator';
+    jct.style.left = kwnX + 'px';
+    jct.style.top = '310px';
+
+    // Branch lines going upward/right
+    jct.innerHTML = `
+      <svg width="120" height="50" style="overflow:visible;position:absolute;left:-5px;top:0;">
+        <line x1="0" y1="0" x2="80" y2="-25" stroke="var(--junction-color)" stroke-width="2" opacity="0.5" stroke-dasharray="4,3"/>
+        <line x1="0" y1="0" x2="80" y2="10" stroke="var(--junction-color)" stroke-width="2" opacity="0.5" stroke-dasharray="4,3"/>
+        <text x="85" y="-22" fill="var(--junction-color)" font-size="8" font-family="Share Tech Mono" letter-spacing="1">ARDROSSAN</text>
+        <text x="85" y="13" fill="var(--junction-color)" font-size="8" font-family="Share Tech Mono" letter-spacing="1">LARGS</text>
+      </svg>
+      <div style="position:absolute;top:-18px;left:-20px;font-size:8px;letter-spacing:2px;color:var(--junction-color);text-transform:uppercase;">⬦ JCT</div>
+    `;
+    panel.appendChild(jct);
+  }
 }
 
-// Update signals based on train positions
+// ===== SIGNAL UPDATES =====
+function setSignal(prefix, crs, aspect) {
+  const r = document.getElementById(`${prefix}-r-${crs}`);
+  const y = document.getElementById(`${prefix}-y-${crs}`);
+  const g = document.getElementById(`${prefix}-g-${crs}`);
+  if (!r || !y || !g) return;
+
+  r.className = 'signal-lamp';
+  y.className = 'signal-lamp';
+  g.className = 'signal-lamp';
+
+  switch (aspect) {
+    case 'red':    r.className = 'signal-lamp red-on'; break;
+    case 'yellow': y.className = 'signal-lamp yellow-on'; break;
+    case 'green':  g.className = 'signal-lamp green-on'; break;
+  }
+}
+
 function updateSignals(trainPositions) {
   // Reset all to green
   STATIONS.forEach(stn => {
-    document.getElementById(`lamp-red-${stn.crs}`).className = 'signal-lamp';
-    document.getElementById(`lamp-yellow-${stn.crs}`).className = 'signal-lamp';
-    document.getElementById(`lamp-green-${stn.crs}`).className = 'signal-lamp green';
+    setSignal('sig-up', stn.crs, 'green');
+    setSignal('sig-dn', stn.crs, 'green');
   });
 
-  // Reset track sections
-  document.querySelectorAll('.track-section').forEach(s => s.classList.remove('occupied'));
+  // Reset track circuits
+  document.querySelectorAll('.track-circuit').forEach(tc => tc.classList.remove('occupied'));
+
+  // Reset approach dots
+  document.querySelectorAll('.approach-dot').forEach(d => d.classList.remove('lit'));
 
   trainPositions.forEach(tp => {
-    if (tp.fromCrs === tp.toCrs) {
-      // Train is at a station
-      const lamp = document.getElementById(`lamp-red-${tp.fromCrs}`);
-      if (lamp) lamp.className = 'signal-lamp red';
-      const greenLamp = document.getElementById(`lamp-green-${tp.fromCrs}`);
-      if (greenLamp) greenLamp.className = 'signal-lamp';
-    } else {
-      // Train between stations - red at departure station, yellow at station before
-      const redLamp = document.getElementById(`lamp-red-${tp.fromCrs}`);
-      if (redLamp) redLamp.className = 'signal-lamp red';
-      const greenLampFrom = document.getElementById(`lamp-green-${tp.fromCrs}`);
-      if (greenLampFrom) greenLampFrom.className = 'signal-lamp';
+    const isNB = tp.direction === 'northbound';
+    const sigPrefix = isNB ? 'sig-up' : 'sig-dn';
+    const tcPrefix = isNB ? 'tc-up' : 'tc-dn';
+    const appPrefix = isNB ? 'app-up' : 'app-dn';
 
-      // Yellow at station before fromCrs
+    if (tp.fromCrs === tp.toCrs) {
+      // At station — red
+      setSignal(sigPrefix, tp.fromCrs, 'red');
+    } else {
+      // Between stations — red at departure, yellow behind
+      setSignal(sigPrefix, tp.fromCrs, 'red');
+
       const fromIdx = STATIONS.findIndex(s => s.crs === tp.fromCrs);
-      // For northbound trains (going right), the previous signal is to the left
-      // For southbound (going left), previous signal is to the right
-      const prevIdx = tp.direction === 'northbound' ? fromIdx - 1 : fromIdx + 1;
+      const prevIdx = isNB ? fromIdx - 1 : fromIdx + 1;
       if (prevIdx >= 0 && prevIdx < STATIONS.length) {
-        const yellowLamp = document.getElementById(`lamp-yellow-${STATIONS[prevIdx].crs}`);
-        if (yellowLamp) yellowLamp.className = 'signal-lamp yellow';
-        const greenLampPrev = document.getElementById(`lamp-green-${STATIONS[prevIdx].crs}`);
-        if (greenLampPrev) greenLampPrev.className = 'signal-lamp';
+        setSignal(sigPrefix, STATIONS[prevIdx].crs, 'yellow');
       }
 
-      // Mark track section as occupied
-      const sectionId = `section-${tp.fromCrs}-${tp.toCrs}`;
-      const section = document.getElementById(sectionId);
-      if (section) section.classList.add('occupied');
-      // Also try reverse order for southbound
-      const sectionIdRev = `section-${tp.toCrs}-${tp.fromCrs}`;
-      const sectionRev = document.getElementById(sectionIdRev);
-      if (sectionRev) sectionRev.classList.add('occupied');
+      // Light up track circuit
+      const tcId = `${tcPrefix}-${tp.fromCrs}-${tp.toCrs}`;
+      const tc = document.getElementById(tcId);
+      if (tc) tc.classList.add('occupied');
+      // Also try reverse for southbound
+      const tcRev = document.getElementById(`${tcPrefix}-${tp.toCrs}-${tp.fromCrs}`);
+      if (tcRev) tcRev.classList.add('occupied');
+
+      // Light approach dot
+      const appId = `${appPrefix}-${tp.fromCrs}-${tp.toCrs}`;
+      const app = document.getElementById(appId);
+      if (app) app.classList.add('lit');
+      const appRev = document.getElementById(`${appPrefix}-${tp.toCrs}-${tp.fromCrs}`);
+      if (appRev) appRev.classList.add('lit');
     }
   });
 }
 
-// Render trains on the panel
+// ===== RENDER TRAINS =====
 function renderTrains(data) {
   const panel = document.getElementById('panel');
-  panel.querySelectorAll('.train').forEach(el => el.remove());
+  panel.querySelectorAll('.train-berth').forEach(el => el.remove());
 
   const trainPositions = [];
   let trainCount = 0;
+  let delays = [];
 
   function processServices(services, direction) {
     if (!services || !services.departures) return;
     services.departures.forEach(svc => {
-      if (svc.cancelled) return;
+      if (svc.cancelled) {
+        delays.push({ type: 'cancel', time: svc.scheduled, dest: svc.destination });
+        return;
+      }
+
       const pos = getTrainPosition(svc.calling_points, direction);
       if (!pos) return;
 
       trainCount++;
       const x = mileToX(pos.mile);
-      const arrow = direction === 'northbound' ? '▶' : '◀';
-      const train = document.createElement('div');
-      train.className = `train ${direction}`;
-      train.style.left = x + 'px';
-      train.innerHTML = `<span class="train-arrow">${arrow}</span> ${svc.scheduled}`;
-      train.title = `${svc.scheduled} to ${svc.destination}${svc.platform ? ' · Plat ' + svc.platform : ''}`;
-      panel.appendChild(train);
+      const isNB = direction === 'northbound';
+      const arrow = isNB ? '▶' : '◀';
+
+      // Detect delays
+      const isDelayed = svc.expected && svc.expected !== 'On Time';
+      if (isDelayed) {
+        delays.push({ type: 'delay', time: svc.scheduled, dest: svc.destination, expected: svc.expected });
+      }
+
+      // Short destination
+      let shortDest = svc.destination || '';
+      if (shortDest.length > 12) shortDest = shortDest.substring(0, 10) + '…';
+
+      const berth = document.createElement('div');
+      berth.className = `train-berth ${direction}`;
+      berth.style.left = x + 'px';
+      berth.innerHTML = `
+        <div class="berth-connector"></div>
+        <div class="berth-box">
+          <span class="berth-arrow">${arrow}</span>
+          <span>${svc.scheduled}</span>
+          <span class="berth-dest">${shortDest}</span>
+        </div>
+      `;
+      berth.title = `${svc.scheduled} to ${svc.destination}${svc.platform ? ' · Platform ' + svc.platform : ''}${isDelayed ? ' · ' + svc.expected : ''}`;
+
+      // Highlight platform box if we know the platform
+      if (svc.platform) {
+        const firstCp = svc.calling_points[0];
+        if (firstCp) {
+          const platEl = document.getElementById(`plat-${firstCp.crs}-${svc.platform}`);
+          if (platEl) platEl.classList.add('active');
+        }
+      }
+
+      panel.appendChild(berth);
 
       trainPositions.push({
         ...pos,
@@ -756,79 +1375,158 @@ function renderTrains(data) {
     });
   }
 
+  // Reset platform highlights
+  document.querySelectorAll('.platform-box').forEach(p => p.classList.remove('active'));
+
   processServices(data.northbound, 'northbound');
   processServices(data.southbound, 'southbound');
 
   updateSignals(trainPositions);
-  document.getElementById('train-count').textContent = `Trains: ${trainCount}`;
-  document.getElementById('last-update').textContent = `Updated: ${new Date().toLocaleTimeString('en-GB')}`;
+  prevTrainPositions = trainPositions;
+
+  // Update info bar
+  document.getElementById('info-trains').textContent = trainCount;
+  document.getElementById('info-updated').textContent = new Date().toLocaleTimeString('en-GB');
+
+  // Find next departures
+  const nm = nowMins();
+
+  function findNextDep(services, originCrs) {
+    if (!services || !services.departures) return '--:--';
+    for (const svc of services.departures) {
+      if (svc.cancelled) continue;
+      const cp = svc.calling_points.find(c => c.crs === originCrs);
+      if (!cp) continue;
+      const t = timeToMins(cp.scheduled);
+      if (t !== null && t >= nm) return cp.scheduled;
+    }
+    return '--:--';
+  }
+
+  document.getElementById('info-next-ayr').textContent = findNextDep(data.northbound, 'AYR');
+  document.getElementById('info-next-glc').textContent = findNextDep(data.southbound, 'GLC');
+
+  // Check for delays in info bar
+  const delayCount = delays.filter(d => d.type === 'delay').length;
+  const cancelCount = delays.filter(d => d.type === 'cancel').length;
+  const infoTrainsEl = document.getElementById('info-trains');
+  infoTrainsEl.className = 'info-value' + (cancelCount > 0 ? ' alert' : delayCount > 0 ? ' delay' : '');
+
+  // Update ticker
+  updateTicker(data, delays, trainCount);
 }
 
-// Station tooltip
+// ===== TICKER =====
+function updateTicker(data, delays, trainCount) {
+  const ticker = document.getElementById('ticker-content');
+  const parts = [];
+
+  parts.push(`${trainCount} TRAIN${trainCount !== 1 ? 'S' : ''} ON ROUTE`);
+
+  // Add delays
+  delays.forEach(d => {
+    if (d.type === 'delay') {
+      parts.push(`<span class="ticker-delay">⚠ ${d.time} TO ${(d.dest || '').toUpperCase()} — ${d.expected}</span>`);
+    } else if (d.type === 'cancel') {
+      parts.push(`<span class="ticker-cancel">✕ ${d.time} TO ${(d.dest || '').toUpperCase()} — CANCELLED</span>`);
+    }
+  });
+
+  // Add next services from each end
+  const nextAyr = document.getElementById('info-next-ayr').textContent;
+  const nextGlc = document.getElementById('info-next-glc').textContent;
+  if (nextAyr !== '--:--') parts.push(`NEXT FROM AYR: ${nextAyr}`);
+  if (nextGlc !== '--:--') parts.push(`NEXT FROM GLASGOW: ${nextGlc}`);
+
+  parts.push('AUTO REFRESH 30S');
+  parts.push(new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase());
+
+  const sep = '<span class="ticker-separator">◆</span>';
+  ticker.innerHTML = parts.join(sep);
+}
+
+// ===== TOOLTIP =====
 function showStationTooltip(event, station) {
   if (!allData) return;
   const tooltip = document.getElementById('tooltip');
   let html = `<h3>${station.name} (${station.crs})</h3>`;
+  html += `<div style="font-size:9px;color:var(--text-dim);margin-bottom:6px;">${station.mile} miles from Ayr · Platforms: ${station.platforms.join(', ')}</div>`;
 
-  // Find next trains at this station
+  const nm2 = nowMins();
+
   function getNextTrains(services, direction) {
     if (!services || !services.departures) return [];
     const trains = [];
-    const now = new Date();
-    const nowMins = now.getHours() * 60 + now.getMinutes();
-
     services.departures.forEach(svc => {
-      const cp = svc.calling_points.find(cp => cp.crs === station.crs);
+      const cp = svc.calling_points.find(c => c.crs === station.crs);
       if (!cp) return;
       const t = timeToMins(cp.scheduled);
-      if (t !== null && t >= nowMins - 5) {
+      if (t !== null && t >= nm2 - 5) {
+        const isDelay = cp.expected && cp.expected !== 'On Time' && cp.expected !== 'Cancelled';
         trains.push({
           time: cp.scheduled,
-          expected: cp.expected || svc.expected,
+          expected: cp.expected || svc.expected || 'On Time',
           platform: cp.platform || svc.platform,
           destination: svc.destination,
           direction,
+          isDelay,
+          cancelled: svc.cancelled,
         });
       }
     });
-    return trains.slice(0, 3);
+    return trains.slice(0, 4);
   }
 
-  const nbTrains = getNextTrains(allData.northbound, '→ GLC');
-  const sbTrains = getNextTrains(allData.southbound, '→ AYR');
+  const nbTrains = getNextTrains(allData.northbound, '→ Glasgow');
+  const sbTrains = getNextTrains(allData.southbound, '→ Ayr');
 
   if (nbTrains.length) {
-    html += `<div class="tt-dir">Northbound → Glasgow</div>`;
+    html += `<div class="tt-dir">▶ Northbound — Glasgow</div>`;
     nbTrains.forEach(t => {
-      html += `<div class="tt-row"><span>${t.time}</span><span>${t.expected}</span>${t.platform ? `<span>Plat ${t.platform}</span>` : ''}</div>`;
+      const statusClass = t.cancelled ? 'tt-delay' : t.isDelay ? 'tt-delay' : 'tt-ontime';
+      const statusText = t.cancelled ? 'CANCELLED' : (t.expected || 'On Time');
+      html += `<div class="tt-row">
+        <span>${t.time}</span>
+        <span class="${statusClass}">${statusText}</span>
+        ${t.platform ? `<span>P${t.platform}</span>` : ''}
+      </div>`;
     });
   }
 
   if (sbTrains.length) {
-    html += `<div class="tt-dir">Southbound → Ayr</div>`;
+    html += `<div class="tt-dir">◀ Southbound — Ayr</div>`;
     sbTrains.forEach(t => {
-      html += `<div class="tt-row"><span>${t.time}</span><span>${t.expected}</span>${t.platform ? `<span>Plat ${t.platform}</span>` : ''}</div>`;
+      const statusClass = t.cancelled ? 'tt-delay' : t.isDelay ? 'tt-delay' : 'tt-ontime';
+      const statusText = t.cancelled ? 'CANCELLED' : (t.expected || 'On Time');
+      html += `<div class="tt-row">
+        <span>${t.time}</span>
+        <span class="${statusClass}">${statusText}</span>
+        ${t.platform ? `<span>P${t.platform}</span>` : ''}
+      </div>`;
     });
   }
 
   if (!nbTrains.length && !sbTrains.length) {
-    html += '<div style="color:var(--text-dim)">No upcoming services</div>';
+    html += '<div style="color:var(--text-dim);margin-top:6px;">No upcoming services</div>';
+  }
+
+  if (station.junction) {
+    html += '<div style="color:var(--junction-color);font-size:9px;margin-top:8px;border-top:1px solid var(--border);padding-top:6px;">⬦ JUNCTION — Branches to Ardrossan &amp; Largs</div>';
   }
 
   tooltip.innerHTML = html;
   tooltip.classList.add('visible');
 
-  const rect = event.target.closest('.station').getBoundingClientRect();
-  const panelRect = document.getElementById('panel').getBoundingClientRect();
-  tooltip.style.left = (rect.left - panelRect.left) + 'px';
-  tooltip.style.top = (rect.bottom - panelRect.top + 8) + 'px';
+  const rect = event.target.closest('.station-diamond-wrap, .station').getBoundingClientRect();
+  tooltip.style.left = Math.min(rect.left, window.innerWidth - 340) + 'px';
+  tooltip.style.top = (rect.bottom + 8) + 'px';
 }
 
 function hideTooltip() {
   document.getElementById('tooltip').classList.remove('visible');
 }
 
-// Fetch data
+// ===== DATA FETCH =====
 async function fetchData() {
   try {
     const resp = await fetch('/api/all');
@@ -837,16 +1535,18 @@ async function fetchData() {
     renderTrains(data);
   } catch (err) {
     console.error('Fetch error:', err);
+    document.getElementById('info-updated').textContent = 'ERR';
+    document.getElementById('info-updated').className = 'info-value alert';
   }
 }
 
-// Init
+// ===== INIT =====
 function init() {
-  buildStations();
+  buildPanel();
   fetchData();
   setInterval(fetchData, 30000);
   window.addEventListener('resize', () => {
-    buildStations();
+    buildPanel();
     if (allData) renderTrains(allData);
   });
 }
