@@ -319,14 +319,61 @@ async def nuro_feed():
             if ln:
                 routes.add(ln)
 
+        from datetime import datetime, timezone as _tz
+        now_iso = datetime.now(_tz.utc).isoformat()
+        bus_count = len(bus_data)
+        route_count = len(routes)
+
+        streams = [
+            {
+                "id": "bus_count",
+                "type": "scalar",
+                "value": bus_count,
+                "label": "Live Buses",
+                "render": "stat",
+                "severity": "ok" if bus_count > 0 else "warning",
+                "updated": now_iso,
+            },
+            {
+                "id": "route_count",
+                "type": "scalar",
+                "value": route_count,
+                "label": "Active Routes",
+                "render": "stat",
+                "updated": now_iso,
+            },
+            {
+                "id": "operators",
+                "type": "breakdown",
+                "label": "Operators",
+                "render": "bar",
+                "data": operators,
+                "updated": now_iso,
+            },
+            {
+                "id": "coverage",
+                "type": "geospatial",
+                "label": "Coverage Area",
+                "render": "text",
+                "value": "Ayrshire (55.3-55.9N, 4.1-4.9W)",
+                "updated": now_iso,
+            },
+        ]
+
         return {
+            # v2 envelope
             "service": "train-tracker",
-            "version": "1.0",
-            "bus_count": len(bus_data),
+            "version": "2.0",
+            "label": "Ayrshire Transport",
+            "icon": "🚌",
+            "url": "https://trains.wispayr.online",
+            "streams": streams,
+            # Backward-compatible flat fields
+            "bus_count": bus_count,
             "train_count": 0,  # TODO: add when ScotRail scrape is reliable
             "operators": operators,
             "active_routes": sorted(routes),
-            "route_count": len(routes),
+            "route_count": route_count,
             "coverage": "Ayrshire (55.3-55.9N, 4.1-4.9W)",
             "data_sources": ["bustimes.org", "scotrail (scrape)"],
         }
