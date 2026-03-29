@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ayr — Glasgow Central | Live Transport Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0e17;
+    --bg-header: rgba(15, 23, 42, 0.85);
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --cyan: #22d3ee;
+    --orange: #fb923c;
+    --panel-bg: rgba(15, 23, 42, 0.72);
+    --panel-border: rgba(255,255,255,0.1);
+    --panel-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --stagecoach: #00aeef;
+    --other-bus: #f97316;
+    --rail-line: #6366f1;
+    --station-dot: #a5b4fc;
+  }
+
+  :root.light {
+    --bg: #f8fafc;
+    --bg-header: rgba(255, 255, 255, 0.85);
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-dim: #64748b;
+    --cyan: #0891b2;
+    --orange: #ea580c;
+    --panel-bg: rgba(255, 255, 255, 0.72);
+    --panel-border: rgba(0,0,0,0.1);
+    --panel-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    --stagecoach: #0077b6;
+    --other-bus: #c2410c;
+    --rail-line: #4f46e5;
+    --station-dot: #6366f1;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  #header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg-header);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  #header h1 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  #header h1 span { color: var(--text-dim); font-weight: 400; }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 4px;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+  .nav-links a {
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .nav-links a:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+  .nav-links a.active { background: var(--cyan); color: #fff; border-color: var(--cyan); }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #22c55e;
+    font-weight: 600;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    background: #22c55e;
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  #clock {
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .theme-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .theme-btn:hover { background: rgba(255,255,255,0.1); }
+
+  #map {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1;
+  }
+
+  /* Control Panel */
+  .control-panel {
+    position: fixed;
+    top: 60px;
+    right: 16px;
+    z-index: 1000;
+    background: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: var(--panel-shadow);
+    min-width: 200px;
+    font-size: 12px;
+  }
+
+  .control-panel h3 {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .filter-group {
+    margin-bottom: 12px;
+  }
+
+  .filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 0;
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .filter-group input[type="checkbox"] {
+    accent-color: var(--cyan);
+    width: 14px;
+    height: 14px;
+  }
+
+  .filter-group select {
+    width: 100%;
+    padding: 6px 8px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  :root.light .filter-group select { background: rgba(255,255,255,0.5); }
+
+  .bus-count-badge {
+    display: inline-block;
+    background: var(--stagecoach);
+    color: #fff;
+    border-radius: 8px;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+  .train-count-badge {
+    display: inline-block;
+    background: var(--cyan);
+    color: #000;
+    border-radius: 8px;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+
+  /* Stats Bar */
+  .stats-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 1000;
+    padding: 8px 20px;
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+  }
+  .stats-bar .stats-left { display: flex; gap: 20px; }
+  .stats-bar .stat-item span { color: var(--text); font-weight: 600; }
+  .stats-bar .credit {
+    font-size: 9px;
+    color: var(--text-dim);
+    opacity: 0.7;
+  }
+  .stats-bar .credit a { color: var(--text-dim); text-decoration: none; }
+  .stats-bar .credit a:hover { text-decoration: underline; }
+
+  /* Leaflet overrides */
+  .leaflet-popup-content-wrapper {
+    background: var(--panel-bg) !important;
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--panel-border) !important;
+    border-radius: 10px !important;
+    color: var(--text) !important;
+    font-family: 'SF Mono', 'Fira Code', monospace !important;
+    font-size: 11px !important;
+    box-shadow: var(--panel-shadow) !important;
+  }
+  .leaflet-popup-tip { background: var(--panel-bg) !important; }
+  .leaflet-popup-content { margin: 10px 14px !important; line-height: 1.6 !important; }
+
+  .popup-route { font-size: 14px; font-weight: 700; }
+  .popup-dest { color: var(--text); }
+  .popup-operator { color: var(--text-dim); font-size: 10px; }
+  .popup-time { color: var(--text-dim); font-size: 10px; }
+
+  .popup-train-dest { font-size: 13px; font-weight: 600; }
+  .popup-train-time { color: var(--cyan); }
+  .popup-train-platform { color: var(--text-dim); font-size: 10px; }
+  .popup-train-delay { color: #ef4444; font-weight: 600; }
+  .popup-train-ontime { color: #22c55e; }
+
+  /* Bus label */
+  .bus-label {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'SF Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    white-space: nowrap;
+  }
+
+  /* Station label */
+  .station-label {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-family: 'SF Mono', monospace;
+    font-size: 9px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: var(--station-dot);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    white-space: nowrap;
+  }
+  :root.light .station-label { text-shadow: 0 1px 4px rgba(255,255,255,0.8); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    #header { padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
+    #header h1 { font-size: 11px; }
+    .control-panel { right: 8px; top: 56px; min-width: 160px; padding: 12px; }
+    .stats-bar { padding: 6px 12px; font-size: 10px; }
+    .nav-links { font-size: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>AYR <span>—</span> GLASGOW CENTRAL <span style="margin-left:8px; font-size:11px; color:var(--text-dim)">Live Transport Map</span></h1>
+  <div class="header-right">
+    <nav class="nav-links">
+      <a href="/">Diagram</a>
+      <a href="/signalman">Signal Panel</a>
+      <a href="/board">Board</a>
+      <a href="/map" class="active">Map</a>
+    </nav>
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    <div id="clock">--:--:--</div>
+    <button class="theme-btn" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div class="control-panel">
+  <h3>Filters</h3>
+  <div class="filter-group">
+    <label><input type="checkbox" id="showTrains" checked> 🚂 Trains <span class="train-count-badge" id="trainCount">0</span></label>
+    <label><input type="checkbox" id="showBuses" checked> 🚌 Buses <span class="bus-count-badge" id="busCount">0</span></label>
+  </div>
+  <div class="filter-group">
+    <h3>Bus Route</h3>
+    <select id="routeFilter">
+      <option value="all">All Routes</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <h3>Operator</h3>
+    <select id="operatorFilter">
+      <option value="all">All Operators</option>
+    </select>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stats-left">
+    <div class="stat-item">🚌 <span id="busTotal">0</span> buses</div>
+    <div class="stat-item">🚂 <span id="trainTotal">0</span> trains</div>
+    <div class="stat-item">Last update: <span id="lastUpdate">--:--</span></div>
+  </div>
+  <div class="credit">Powered by <a href="https://bustimes.org" target="_blank">bustimes.org</a> & <a href="https://www.scotrail.co.uk" target="_blank">ScotRail</a></div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Station Data ──
+  const STATIONS = [
+    { crs: 'AYR', name: 'Ayr', lat: 55.458, lon: -4.629 },
+    { crs: 'NOA', name: 'Newton-on-Ayr', lat: 55.465, lon: -4.627 },
+    { crs: 'PTW', name: 'Prestwick Town', lat: 55.479, lon: -4.615 },
+    { crs: 'PRA', name: 'Prestwick Airport', lat: 55.487, lon: -4.601 },
+    { crs: 'TRN', name: 'Troon', lat: 55.508, lon: -4.567 },
+    { crs: 'BSS', name: 'Barassie', lat: 55.519, lon: -4.559 },
+    { crs: 'IRV', name: 'Irvine', lat: 55.541, lon: -4.556 },
+    { crs: 'KWN', name: 'Kilwinning', lat: 55.553, lon: -4.545 },
+    { crs: 'DLY', name: 'Dalry', lat: 55.575, lon: -4.501 },
+    { crs: 'LHW', name: 'Lochwinnoch', lat: 55.603, lon: -4.476 },
+    { crs: 'MIK', name: 'Milliken Park', lat: 55.611, lon: -4.431 },
+    { crs: 'JHN', name: 'Johnstone', lat: 55.621, lon: -4.425 },
+    { crs: 'PYG', name: 'Paisley Gilmour St', lat: 55.846, lon: -4.424 },
+    { crs: 'GLC', name: 'Glasgow Central', lat: 55.860, lon: -4.258 },
+  ];
+
+  const stationMap = {};
+  STATIONS.forEach(s => stationMap[s.crs] = s);
+
+  // ── Theme ──
+  let isDark = true;
+  const darkTiles = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+  const lightTiles = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  let tileLayer;
+
+  function toggleTheme() {
+    isDark = !isDark;
+    document.documentElement.classList.toggle('light', !isDark);
+    localStorage.setItem('map-theme', isDark ? 'dark' : 'light');
+    const newUrl = isDark ? darkTiles : lightTiles;
+    tileLayer.setUrl(newUrl);
+  }
+
+  if (localStorage.getItem('map-theme') === 'light') {
+    isDark = false;
+    document.documentElement.classList.add('light');
+  }
+
+  // ── Map Init ──
+  const map = L.map('map', {
+    center: [55.55, -4.50],
+    zoom: 11,
+    zoomControl: false,
+  });
+
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  tileLayer = L.tileLayer(isDark ? darkTiles : lightTiles, {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // ── Railway Line ──
+  const railCoords = STATIONS.map(s => [s.lat, s.lon]);
+  const railLine = L.polyline(railCoords, {
+    color: '#6366f1',
+    weight: 3,
+    opacity: 0.6,
+    dashArray: '8, 6',
+  }).addTo(map);
+
+  // Station dots + labels
+  const stationLayer = L.layerGroup().addTo(map);
+  STATIONS.forEach(s => {
+    L.circleMarker([s.lat, s.lon], {
+      radius: 4,
+      fillColor: '#a5b4fc',
+      color: '#6366f1',
+      weight: 1.5,
+      fillOpacity: 0.9,
+    }).addTo(stationLayer);
+
+    L.marker([s.lat, s.lon], {
+      icon: L.divIcon({
+        className: 'station-label',
+        html: s.name,
+        iconSize: null,
+        iconAnchor: [-8, 4],
+      }),
+      interactive: false,
+    }).addTo(stationLayer);
+  });
+
+  // ── Layers ──
+  const busLayer = L.layerGroup().addTo(map);
+  const trainLayer = L.layerGroup().addTo(map);
+
+  // ── State ──
+  let busMarkers = {};    // id -> { marker, labelMarker, data }
+  let trainMarkers = {};  // key -> { marker, data }
+  let allBusData = [];
+  let allRoutes = new Set();
+  let allOperators = new Set();
+
+  // ── Clock ──
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('en-GB');
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ── Operator Colors ──
+  function getOperatorColor(operator) {
+    if (!operator) return '#9ca3af';
+    const op = operator.toLowerCase();
+    if (op.includes('stagecoach')) return '#00aeef';
+    if (op.includes('mcgill')) return '#e11d48';
+    if (op.includes('first')) return '#7c3aed';
+    if (op.includes('west coast')) return '#059669';
+    return '#f97316';
+  }
+
+  // ── Bus Heading Arrow SVG ──
+  function busIcon(color, heading, routeNum) {
+    const rot = heading || 0;
+    return L.divIcon({
+      className: '',
+      html: `<div style="position:relative;width:22px;height:22px;">
+        <svg width="22" height="22" viewBox="0 0 22 22" style="transform:rotate(${rot}deg)">
+          <circle cx="11" cy="11" r="9" fill="${color}" opacity="0.9" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+          <polygon points="11,3 14,10 11,8 8,10" fill="rgba(255,255,255,0.85)"/>
+        </svg>
+      </div>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+      popupAnchor: [0, -14],
+    });
+  }
+
+  // ── Train Icon ──
+  function trainIcon(direction) {
+    const color = direction === 'northbound' ? '#22d3ee' : '#fb923c';
+    const glow = direction === 'northbound' ? 'rgba(34,211,238,0.4)' : 'rgba(251,146,60,0.4)';
+    return L.divIcon({
+      className: '',
+      html: `<div style="position:relative;width:28px;height:28px;">
+        <svg width="28" height="28" viewBox="0 0 28 28">
+          <circle cx="14" cy="14" r="12" fill="${color}" opacity="0.2" />
+          <circle cx="14" cy="14" r="8" fill="${color}" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+          <text x="14" y="18" text-anchor="middle" font-size="10" font-weight="bold" fill="#000">🚆</text>
+        </svg>
+      </div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -16],
+    });
+  }
+
+  // ── Interpolate train position ──
+  function interpolateTrainPosition(callingPoints, direction) {
+    if (!callingPoints || callingPoints.length === 0) return null;
+
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+
+    // Build position list from calling points that have station coords
+    const positions = [];
+    for (const cp of callingPoints) {
+      const station = stationMap[cp.crs];
+      if (!station) continue;
+      const [h, m] = cp.scheduled.split(':').map(Number);
+      const mins = h * 60 + m;
+      positions.push({ lat: station.lat, lon: station.lon, time: mins, crs: cp.crs });
+    }
+
+    if (positions.length === 0) return null;
+
+    // Sort by time
+    positions.sort((a, b) => a.time - b.time);
+
+    // If before first stop, place at first stop
+    if (nowMins <= positions[0].time) {
+      return { lat: positions[0].lat, lon: positions[0].lon };
+    }
+
+    // If after last stop, place at last stop
+    if (nowMins >= positions[positions.length - 1].time) {
+      return { lat: positions[positions.length - 1].lat, lon: positions[positions.length - 1].lon };
+    }
+
+    // Find segment and interpolate
+    for (let i = 0; i < positions.length - 1; i++) {
+      const a = positions[i];
+      const b = positions[i + 1];
+      if (nowMins >= a.time && nowMins <= b.time) {
+        const frac = (nowMins - a.time) / (b.time - a.time);
+        return {
+          lat: a.lat + (b.lat - a.lat) * frac,
+          lon: a.lon + (b.lon - a.lon) * frac,
+        };
+      }
+    }
+
+    return { lat: positions[0].lat, lon: positions[0].lon };
+  }
+
+  // ── Smooth marker move ──
+  function animateMarker(marker, newLatLng, duration) {
+    if (!marker._latlng) { marker.setLatLng(newLatLng); return; }
+    const start = marker.getLatLng();
+    const startTime = performance.now();
+    function step(ts) {
+      const elapsed = ts - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const ease = t * (2 - t); // ease-out
+      const lat = start.lat + (newLatLng[0] - start.lat) * ease;
+      const lng = start.lng + (newLatLng[1] - start.lng) * ease;
+      marker.setLatLng([lat, lng]);
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // ── Fetch and render buses ──
+  async function fetchBuses() {
+    try {
+      const resp = await fetch('/api/buses');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      allBusData = Array.isArray(data) ? data : [];
+      renderBuses();
+    } catch (e) {
+      console.warn('Bus fetch error:', e);
+    }
+  }
+
+  function renderBuses() {
+    const showBuses = document.getElementById('showBuses').checked;
+    const routeFilter = document.getElementById('routeFilter').value;
+    const operatorFilter = document.getElementById('operatorFilter').value;
+
+    if (!showBuses) {
+      busLayer.clearLayers();
+      busMarkers = {};
+      document.getElementById('busCount').textContent = '0';
+      document.getElementById('busTotal').textContent = '0';
+      return;
+    }
+
+    const filtered = allBusData.filter(b => {
+      if (routeFilter !== 'all' && b.line_name !== routeFilter) return false;
+      if (operatorFilter !== 'all' && b.operator !== operatorFilter) return false;
+      return true;
+    });
+
+    // Collect routes/operators for dropdowns
+    const newRoutes = new Set();
+    const newOperators = new Set();
+    allBusData.forEach(b => {
+      if (b.line_name) newRoutes.add(b.line_name);
+      if (b.operator) newOperators.add(b.operator);
+    });
+
+    // Update dropdowns if changed
+    if (newRoutes.size !== allRoutes.size || ![...newRoutes].every(r => allRoutes.has(r))) {
+      allRoutes = newRoutes;
+      const sel = document.getElementById('routeFilter');
+      const cur = sel.value;
+      sel.innerHTML = '<option value="all">All Routes</option>';
+      [...allRoutes].sort().forEach(r => {
+        sel.innerHTML += `<option value="${r}">${r}</option>`;
+      });
+      sel.value = cur;
+    }
+    if (newOperators.size !== allOperators.size || ![...newOperators].every(o => allOperators.has(o))) {
+      allOperators = newOperators;
+      const sel = document.getElementById('operatorFilter');
+      const cur = sel.value;
+      sel.innerHTML = '<option value="all">All Operators</option>';
+      [...allOperators].sort().forEach(o => {
+        sel.innerHTML += `<option value="${o}">${o}</option>`;
+      });
+      sel.value = cur;
+    }
+
+    // Track which bus IDs are still present
+    const activeIds = new Set();
+
+    filtered.forEach((bus, idx) => {
+      if (!bus.coordinates || bus.coordinates.length < 2) return;
+      const lat = bus.coordinates[1];
+      const lon = bus.coordinates[0];
+      const id = bus.id || bus.vehicle?.url || `bus-${idx}`;
+      activeIds.add(id);
+
+      const color = getOperatorColor(bus.operator);
+      const popupContent = `
+        <div class="popup-route" style="color:${color}">${bus.line_name || '?'}</div>
+        <div class="popup-dest">${bus.destination || 'Unknown destination'}</div>
+        <div class="popup-operator">${bus.operator || 'Unknown operator'}</div>
+        <div class="popup-time">Heading: ${bus.heading != null ? Math.round(bus.heading) + '°' : 'N/A'}</div>
+      `;
+
+      if (busMarkers[id]) {
+        // Update existing marker position with animation
+        animateMarker(busMarkers[id].marker, [lat, lon], 2000);
+        busMarkers[id].marker.setIcon(busIcon(color, bus.heading, bus.line_name));
+        busMarkers[id].marker.setPopupContent(popupContent);
+        if (busMarkers[id].labelMarker) {
+          animateMarker(busMarkers[id].labelMarker, [lat, lon], 2000);
+        }
+      } else {
+        // Create new marker
+        const marker = L.marker([lat, lon], {
+          icon: busIcon(color, bus.heading, bus.line_name),
+          zIndexOffset: 100,
+        }).addTo(busLayer).bindPopup(popupContent);
+
+        const labelMarker = L.marker([lat, lon], {
+          icon: L.divIcon({
+            className: 'bus-label',
+            html: `<span style="color:${color}">${bus.line_name || ''}</span>`,
+            iconSize: null,
+            iconAnchor: [-12, 4],
+          }),
+          interactive: false,
+          zIndexOffset: 99,
+        }).addTo(busLayer);
+
+        busMarkers[id] = { marker, labelMarker, data: bus };
+      }
+    });
+
+    // Remove stale markers
+    Object.keys(busMarkers).forEach(id => {
+      if (!activeIds.has(id)) {
+        busLayer.removeLayer(busMarkers[id].marker);
+        if (busMarkers[id].labelMarker) busLayer.removeLayer(busMarkers[id].labelMarker);
+        delete busMarkers[id];
+      }
+    });
+
+    document.getElementById('busCount').textContent = filtered.length;
+    document.getElementById('busTotal').textContent = filtered.length;
+  }
+
+  // ── Fetch and render trains ──
+  async function fetchTrains() {
+    try {
+      const resp = await fetch('/api/all');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      renderTrains(data);
+    } catch (e) {
+      console.warn('Train fetch error:', e);
+    }
+  }
+
+  function renderTrains(data) {
+    const showTrains = document.getElementById('showTrains').checked;
+    if (!showTrains) {
+      trainLayer.clearLayers();
+      trainMarkers = {};
+      document.getElementById('trainCount').textContent = '0';
+      document.getElementById('trainTotal').textContent = '0';
+      return;
+    }
+
+    const activeKeys = new Set();
+    let count = 0;
+
+    ['northbound', 'southbound'].forEach(dir => {
+      const section = data[dir];
+      if (!section) return;
+      const departures = section.departures || [];
+
+      departures.forEach(train => {
+        const key = `${dir}-${train.scheduled}-${train.destination}`;
+        const pos = interpolateTrainPosition(train.calling_points, dir);
+        if (!pos) return;
+
+        activeKeys.add(key);
+        count++;
+
+        const delayStr = train.cancelled
+          ? '<span class="popup-train-delay">CANCELLED</span>'
+          : train.delay_mins > 0
+            ? `<span class="popup-train-delay">+${train.delay_mins} min</span>`
+            : '<span class="popup-train-ontime">On Time</span>';
+
+        const popupContent = `
+          <div class="popup-train-dest">${dir === 'northbound' ? '↑' : '↓'} ${train.destination}</div>
+          <div class="popup-train-time">${train.scheduled} ${delayStr}</div>
+          <div class="popup-train-platform">${train.platform ? 'Platform ' + train.platform : ''}</div>
+          <div class="popup-operator" style="margin-top:4px">${train.calling_points ? train.calling_points.length + ' calling points' : ''}</div>
+        `;
+
+        if (trainMarkers[key]) {
+          animateMarker(trainMarkers[key].marker, [pos.lat, pos.lon], 3000);
+          trainMarkers[key].marker.setPopupContent(popupContent);
+        } else {
+          const marker = L.marker([pos.lat, pos.lon], {
+            icon: trainIcon(dir),
+            zIndexOffset: 200,
+          }).addTo(trainLayer).bindPopup(popupContent);
+
+          trainMarkers[key] = { marker, data: train };
+        }
+      });
+    });
+
+    // Remove stale
+    Object.keys(trainMarkers).forEach(key => {
+      if (!activeKeys.has(key)) {
+        trainLayer.removeLayer(trainMarkers[key].marker);
+        delete trainMarkers[key];
+      }
+    });
+
+    document.getElementById('trainCount').textContent = count;
+    document.getElementById('trainTotal').textContent = count;
+  }
+
+  // ── Update timestamp ──
+  function updateTimestamp() {
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent =
+      now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ── Filter event listeners ──
+  document.getElementById('showBuses').addEventListener('change', renderBuses);
+  document.getElementById('showTrains').addEventListener('change', () => fetchTrains());
+  document.getElementById('routeFilter').addEventListener('change', renderBuses);
+  document.getElementById('operatorFilter').addEventListener('change', renderBuses);
+
+  // ── Initial fetch + intervals ──
+  fetchBuses();
+  fetchTrains();
+  updateTimestamp();
+
+  setInterval(() => { fetchBuses(); updateTimestamp(); }, 10000);
+  setInterval(() => { fetchTrains(); updateTimestamp(); }, 30000);
+
+  // Expose toggle
+  window.toggleTheme = toggleTheme;
+})();
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import httpx
 import uvicorn
 
@@ -257,6 +258,30 @@ async def board():
     """Serve the departure board page."""
     html_path = Path(__file__).parent / "board.html"
     return HTMLResponse(html_path.read_text())
+
+
+@app.get("/map")
+async def map_page():
+    """Serve the live transport map page."""
+    html_path = Path(__file__).parent / "map.html"
+    return HTMLResponse(html_path.read_text())
+
+
+@app.get("/api/buses")
+async def buses():
+    """Proxy bustimes.org vehicle locations for Ayrshire area."""
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                "https://bustimes.org/vehicles.json"
+                "?ymax=55.9&xmax=-4.1&ymin=55.3&xmin=-4.9",
+                headers={"User-Agent": USER_AGENT},
+            )
+            if r.status_code != 200:
+                return JSONResponse([], status_code=200)
+            return JSONResponse(r.json())
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
 
 
 if __name__ == "__main__":
