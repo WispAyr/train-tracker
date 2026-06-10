@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NAR Travel — Ayrshire Trains</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0b0f1a;
+    --panel: #121829;
+    --panel2: #0e1422;
+    --border: #1f2940;
+    --text: #e8edf6;
+    --dim: #8b97ad;
+    --faint: #5a657c;
+    --accent: #38bdf8;
+    --good: #22c55e;
+    --good-bg: rgba(34,197,94,.12);
+    --minor: #fbbf24;
+    --minor-bg: rgba(251,191,36,.12);
+    --major: #fb923c;
+    --major-bg: rgba(251,146,60,.14);
+    --cancel: #ef4444;
+    --cancel-bg: rgba(239,68,68,.14);
+    --unknown: #64748b;
+    --unknown-bg: rgba(100,116,139,.12);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 22px;
+    background: rgba(11,15,26,.88);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .brand { font-size: 17px; font-weight: 800; letter-spacing: .5px; }
+  .brand .nar { color: var(--accent); }
+  .brand small { color: var(--dim); font-weight: 500; margin-left: 8px; }
+  .live { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--good); }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .spacer { flex: 1; }
+  .clock { font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 700; }
+  .refresh { font-size: 12px; color: var(--dim); display:flex; align-items:center; gap:8px; }
+  .refresh button {
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+  }
+  .refresh button:hover { border-color: var(--accent); }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  nav a {
+    color: var(--dim); text-decoration: none; font-size: 12px;
+    padding: 5px 10px; border: 1px solid var(--border); border-radius: 8px;
+  }
+  nav a:hover { color: var(--text); border-color: var(--accent); }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 20px 22px 60px; }
+
+  /* overall banner */
+  #banner {
+    border-radius: 16px; padding: 22px 26px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    border: 1px solid var(--border);
+  }
+  #banner .headline { font-size: clamp(22px, 3.4vw, 36px); font-weight: 800; letter-spacing: -.5px; }
+  #banner .sub { color: var(--dim); font-size: 14px; width: 100%; }
+  #banner.good { background: var(--good-bg); border-color: rgba(34,197,94,.4); }
+  #banner.good .headline { color: var(--good); }
+  #banner.minor { background: var(--minor-bg); border-color: rgba(251,191,36,.4); }
+  #banner.minor .headline { color: var(--minor); }
+  #banner.major { background: var(--major-bg); border-color: rgba(251,146,60,.4); }
+  #banner.major .headline { color: var(--major); }
+  #banner.cancellations { background: var(--cancel-bg); border-color: rgba(239,68,68,.45); }
+  #banner.cancellations .headline { color: var(--cancel); }
+  #banner.unknown { background: var(--unknown-bg); }
+  #banner.unknown .headline { color: var(--unknown); }
+
+  .section-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--faint);
+    text-transform: uppercase; margin: 26px 0 12px;
+  }
+
+  /* script panel */
+  #script-panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 22px;
+  }
+  .script-row { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 16px; }
+  .script-row:last-child { margin-bottom: 0; }
+  .script-text {
+    flex: 1; font-size: 19px; line-height: 1.55; color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+  }
+  .script-text.quick { font-size: 22px; font-weight: 600; }
+  .script-label { font-size: 10px; letter-spacing: 1.5px; color: var(--faint); font-weight: 700; margin-bottom: 4px; text-transform: uppercase; }
+  .copy-btn {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--dim);
+    border-radius: 8px; padding: 8px 14px; font-size: 12px; cursor: pointer; white-space: nowrap;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+  .copy-btn.copied { color: var(--good); border-color: var(--good); }
+  .bigger-btn { float: right; }
+
+  /* corridor cards */
+  #corridors { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+    padding: 18px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .card-head h3 { font-size: 15px; font-weight: 700; }
+  .pill {
+    font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+    padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+  }
+  .pill.good { background: var(--good-bg); color: var(--good); }
+  .pill.minor { background: var(--minor-bg); color: var(--minor); }
+  .pill.major { background: var(--major-bg); color: var(--major); }
+  .pill.cancellations { background: var(--cancel-bg); color: var(--cancel); }
+  .pill.unknown { background: var(--unknown-bg); color: var(--unknown); }
+
+  .problems { display: flex; flex-direction: column; gap: 6px; }
+  .problem {
+    font-size: 13px; line-height: 1.45; padding: 8px 11px; border-radius: 10px;
+    background: var(--panel2); border-left: 3px solid var(--cancel);
+  }
+  .problem.delayed { border-left-color: var(--minor); }
+  .problem b { font-variant-numeric: tabular-nums; }
+  .all-clear { font-size: 13px; color: var(--good); }
+
+  .next-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+  .next-col h4 { font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .next-svc { display: flex; gap: 8px; font-size: 13px; padding: 3px 0; font-variant-numeric: tabular-nums; }
+  .next-svc .t { font-weight: 700; }
+  .next-svc .d { color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .next-svc .s { font-weight: 600; white-space: nowrap; }
+  .next-svc .s.ok { color: var(--good); }
+  .next-svc .s.late { color: var(--minor); }
+  .next-svc .s.cancelled { color: var(--cancel); }
+
+  /* incidents */
+  .incident {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px; margin-bottom: 10px;
+  }
+  .incident .cat {
+    font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--cancel); margin-bottom: 6px;
+  }
+  .incident .cat.eng { color: var(--minor); }
+  .incident h3 { font-size: 15px; margin-bottom: 6px; }
+  .incident p { font-size: 13px; color: var(--dim); line-height: 1.5; }
+  .incident .meta { font-size: 11px; color: var(--faint); margin-top: 8px; }
+  .none-msg { color: var(--dim); font-size: 14px; padding: 6px 2px; }
+
+  footer { text-align: center; color: var(--faint); font-size: 11px; padding: 30px 0 50px; }
+  footer a { color: var(--dim); }
+
+  body.bigtext .script-text { font-size: 26px; }
+  body.bigtext .script-text.quick { font-size: 30px; }
+
+  @media (max-width: 640px) {
+    header { padding: 12px 14px; }
+    main { padding: 14px 14px 40px; }
+    .clock { font-size: 18px; }
+    .next-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="nar">NAR</span> TRAVEL<small>Ayrshire Trains</small></div>
+  <div class="live"><div class="live-dot"></div>LIVE</div>
+  <div class="spacer"></div>
+  <div class="clock" id="clock">--:--:--</div>
+  <div class="refresh">
+    <span id="countdown">—</span>
+    <button id="refresh-btn">Refresh</button>
+  </div>
+  <nav>
+    <a href="/diagram">Diagram</a>
+    <a href="/board">Board</a>
+    <a href="/map">Map</a>
+    <a href="/signalman">Signalman</a>
+  </nav>
+</header>
+
+<main>
+  <div id="banner" class="unknown">
+    <div class="headline" id="headline">Loading live rail data…</div>
+    <div class="sub" id="banner-sub"></div>
+  </div>
+
+  <div class="section-title">Read this on air</div>
+  <div id="script-panel">
+    <button class="copy-btn bigger-btn" id="bigtext-btn" title="Toggle large studio text">A&#8597;</button>
+    <div class="script-row">
+      <div style="flex:1">
+        <div class="script-label">Quick line</div>
+        <div class="script-text quick" id="script-quick">—</div>
+      </div>
+      <button class="copy-btn" data-copy="script-quick">Copy</button>
+    </div>
+    <div class="script-row">
+      <div style="flex:1">
+        <div class="script-label">Full bulletin</div>
+        <div class="script-text" id="script-full">—</div>
+      </div>
+      <button class="copy-btn" data-copy="script-full">Copy</button>
+    </div>
+  </div>
+
+  <div class="section-title">Lines</div>
+  <div id="corridors"></div>
+
+  <div class="section-title">ScotRail notices for Ayrshire</div>
+  <div id="incidents"><div class="none-msg">Loading…</div></div>
+</main>
+
+<footer>
+  Data: ScotRail JourneyCheck (live) · refreshes every 60s ·
+  <a href="/diagram">time–distance diagram</a> · <a href="/map">live map</a>
+</footer>
+
+<script>
+const $ = id => document.getElementById(id);
+const REFRESH_SECS = 60;
+let countdown = REFRESH_SECS;
+
+function tickClock() {
+  const now = new Date();
+  $('clock').textContent = now.toLocaleTimeString('en-GB', { timeZone: 'Europe/London' });
+}
+setInterval(tickClock, 1000); tickClock();
+
+function esc(s) {
+  const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML;
+}
+
+function svcStatus(svc) {
+  const exp = (svc.expected || '').toLowerCase();
+  if (exp.includes('cancel')) return ['Cancelled', 'cancelled'];
+  if (svc.delay_mins >= 1) return ['+' + svc.delay_mins + 'm', 'late'];
+  if (exp.includes('delay')) return ['Delayed', 'late'];
+  return ['On time', 'ok'];
+}
+
+function renderCorridor(c) {
+  const probs = (c.problems || []).slice(0, 5).map(p => {
+    const what = p.kind === 'cancelled'
+      ? 'CANCELLED'
+      : (p.delay_mins ? `running ${p.delay_mins} min late` : 'delayed');
+    return `<div class="problem ${p.kind}"><b>${esc(p.scheduled)}</b> ${esc(p.direction)} (${esc(p.destination)}) — ${what}</div>`;
+  }).join('');
+
+  const nextCol = (label, list) => `
+    <div class="next-col"><h4>${esc(label)}</h4>
+      ${(list || []).slice(0, 3).map(s => {
+        const [txt, cls] = svcStatus(s);
+        return `<div class="next-svc"><span class="t">${esc(s.scheduled)}</span><span class="d">${esc(s.destination)}</span><span class="s ${cls}">${txt}</span></div>`;
+      }).join('') || '<div class="next-svc"><span class="d">No services listed</span></div>'}
+    </div>`;
+
+  return `<div class="card">
+    <div class="card-head"><h3>${esc(c.name)}</h3><span class="pill ${c.status}">${esc(c.status_label)}</span></div>
+    ${probs ? `<div class="problems">${probs}</div>` : (c.status === 'good' ? '<div class="all-clear">✓ All listed services on time</div>' : '')}
+    <div class="next-grid">
+      ${nextCol(c.out_label, c.next_out)}
+      ${nextCol(c.in_label, c.next_in)}
+    </div>
+  </div>`;
+}
+
+function renderIncidents(list) {
+  if (!list || !list.length) {
+    $('incidents').innerHTML = '<div class="none-msg">✓ No Ayrshire-specific disruption notices from ScotRail right now.</div>';
+    return;
+  }
+  $('incidents').innerHTML = list.map(i => `
+    <div class="incident">
+      <div class="cat ${i.category === 'Engineering works' ? 'eng' : ''}">${esc(i.category)}</div>
+      <h3>${esc(i.title)}</h3>
+      <p>${esc(i.body)}</p>
+      <div class="meta">${i.updated ? 'Last updated ' + esc(i.updated) : ''}</div>
+    </div>`).join('');
+}
+
+async function load() {
+  try {
+    const r = await fetch('/api/presenter');
+    const data = await r.json();
+    if (data.error) throw new Error(data.error);
+
+    const banner = $('banner');
+    banner.className = data.overall.status;
+    $('headline').textContent = data.overall.headline;
+    $('banner-sub').textContent =
+      'Updated ' + data.generated_hhmm + (data.stale ? ' (stale — showing last good data)' : '') +
+      ' · Ayr–Glasgow · Kilmarnock–Glasgow · Largs/Ardrossan · Ayr–Girvan';
+
+    $('script-quick').textContent = data.script.quick;
+    $('script-full').textContent = data.script.full;
+    $('corridors').innerHTML = (data.corridors || []).map(renderCorridor).join('');
+    renderIncidents(data.incidents);
+  } catch (e) {
+    $('banner').className = 'unknown';
+    $('headline').textContent = 'Live data unavailable';
+    $('banner-sub').textContent = 'Could not reach the rail data feed — retrying shortly. (' + e.message + ')';
+  }
+  countdown = REFRESH_SECS;
+}
+
+setInterval(() => {
+  countdown--;
+  $('countdown').textContent = countdown + 's';
+  if (countdown <= 0) load();
+}, 1000);
+
+$('refresh-btn').addEventListener('click', load);
+$('bigtext-btn').addEventListener('click', () => document.body.classList.toggle('bigtext'));
+
+document.querySelectorAll('.copy-btn[data-copy]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const text = $(btn.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(text); } catch (e) {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+    }
+    btn.classList.add('copied'); btn.textContent = 'Copied ✓';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'Copy'; }, 1600);
+  });
+});
+
+load();
+</script>
+</body>
+</html>
