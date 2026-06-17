@@ -1,0 +1,17 @@
+name: deploy
+on:
+  push:
+    branches: [master]
+  workflow_dispatch: {}
+
+# Never let two deploys run at once (the race that corrupted other services).
+concurrency:
+  group: deploy-train-tracker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, big-server, train-tracker]
+    steps:
+      - name: Deploy to /srv/train-tracker
+        run: /srv/train-tracker/scripts/deploy.sh
