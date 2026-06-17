@@ -24,7 +24,7 @@ tmp="$(mktemp)"
 drift=0
 
 notify() { # $1=name $2=summary — pluggable; wire to dispatch/overwatch later
-  logger -t ci-drift "$1: $2"
+  logger -t ci-drift -p user.warning "$1: $2"
 }
 
 for t in "${TARGETS[@]}"; do
@@ -49,4 +49,7 @@ for t in "${TARGETS[@]}"; do
 done
 
 mv "$tmp" "$STATE" 2>/dev/null || cp "$tmp" "$STATE"
-exit $drift
+# Exit 0 even on drift: a found-drift is a normal, expected outcome surfaced via
+# the warning-level journal nag + status file (not a script malfunction). Reserve
+# non-zero for actual errors so `systemctl --failed` stays meaningful.
+exit 0
